@@ -1,0 +1,140 @@
+---
+title: "Terrestrial Red List of Ecosystems (South Africa)"
+subtitle: "Spatial analysis workflow - RLE Criteria A2b and A3"
+author: "SANBI"
+date: January  2025
+format: 
+ html:
+  toc: true
+  toc-location: left
+  embed-resources: true
+editor: visual
+execute: 
+  eval: false
+bibliography: references.bib
+---
+
+### Approach
+
+Undertake spatial analyses usually done in ARCGIS using R - to imporve reproducibility and transparency of workflows for RLE.
+
+Import the results of a spatial analysis in R terra that combined land cover data for 1990, 2014, 2018, 2020 and 2022 with national vegetation map data (2024 version). The cross tabulation (using R, Terra) of terrestrial ecosystem types (vegetation) data with land cover change data for South Africa is described in workflow "LC_change_7class_veg24.qmd". This allows for the calculation of the natural remaining extent for each ecosystem type at each time point across full extent of ecosystem. The rate of habitat loss over the last 30 years can then be calculated allowing for assessment of each type using Criterion A2b. The metrics also allow for the extent of each type to be expressed as a percentage of its historical potential extent which is required for Criterion A3[@keith2013]; [@skowno2021c].
+
+```{mermaid}
+# add workflow
+```
+
+### Load required packages
+
+```{r}
+library(tidyverse)
+library(terra)
+library(PROJ)
+```
+
+### Import data from spatial analysis
+
+```{r}
+rall <- read_csv("path/lc7_rall.csv", show_col_types = FALSE) #import the version NOT masked to SA and save in chosen location 
+#file available at:https://github.com/askowno/LLC_terr/blob/main/outputs/lc7_rall.csv
+```
+
+### Step 1. Adjust input data for RLE analysis
+
+Make data wider, and add reference time point of 1750 (calculated by adding natural and not natural extent of each ecosystem type). Then calculate the proportion of each type remaining in a natural state.
+
+```{r}
+# Adjust input data from spatial analysis and prepare for RLE analysis   
+rall <- rall %>%   
+  mutate(LC = ifelse(LC == 1, "nat", "notnat")) %>% #reclassify lc7class to binary 
+  select(-n & -LC7_text & -...1) %>% # clean up dataset of unnessessary fields
+  filter(YEAR != 1750) %>% # remove and add later as this creates Null rows for empty classes    
+  group_by(LC, YEAR, BIOME, T_MAPCODE) %>% # consolidate the duplicate rows following reclass   
+  summarise(km2 = sum(km2),.groups = "drop")  
+
+rle_vegw <- rall %>%   
+  pivot_wider(names_from = YEAR, values_from = km2) %>%   
+  pivot_wider(names_from = LC, names_glue = "{LC}_{.value}",               values_from = c("1990", "2014" , "2018", "2020", "2022")) %>%   
+  mutate(nat_1750 = (nat_1990 + notnat_1990)) %>%   
+  select(-c(notnat_1990, notnat_2014,notnat_2018, notnat_2020, notnat_2022)) %>%
+  relocate(nat_1750, .before = nat_1990) %>%     
+  mutate(pnat_1990 = nat_1990 /nat_1750, 
+         pnat_2014 = nat_2014 /nat_1750,           
+         pnat_2018 = nat_2018 /nat_1750,           
+         pnat_2020 = nat_2020 /nat_1750,          
+         pnat_2022 = nat_2022 /nat_1750)
+```
+
+### Step 2. Calculate Criteria A2b and A3
+
+1.  Compute proportion remaining for Criteria A3 for each terrestrial ecosystem type at each time point.
+2.  Compute the annual rate of decline of ecosystem extent (RoD) over the period 1990 to 2020 (30 years) (absolute decline selected in South Africa). This RoD can be used to estimate ecosystem extent in 2040 to allow for computation of Criterion A2b (recent and ongoing declines). RoD is also used in Criterion B as evidence of ongoing decline (is the ROD \> 0.4%)
+
+```{r}
+#Compute metrics required for RLE (Absolute Rate of Decline (km2/year), Rate of Decline (%/year), Proportion Lost over 50years, Projected extent in 2040). And then assess Criterion A3 and A2b
+
+rle_vegw <- rle_vegw %>%
+   mutate(ARD = ((nat_1990 - nat_2022)/ (2022-1990)), 
+         nat_2040 = nat_1990 -(ARD * 50),
+         prplost9040 = (nat_1990 - nat_2040)/nat_1990, 
+         ROD = ARD/nat_1990*100)
+
+rle_vegw <- rle_vegw %>%
+  mutate(A2b = case_when(prplost9040 >= 0.8 ~ "CR",
+                   prplost9040 >= 0.5 ~ "EN",
+                   prplost9040 >= 0.3 ~ "VU",
+                  TRUE ~ "LC")) %>%
+    mutate(A3 = case_when(1-pnat_2022 >= 0.9 ~ "CR",
+                  1-pnat_2022 >= 0.7 ~ "EN",
+                  1-pnat_2022 >= 0.5 ~ "VU",
+                  TRUE ~ "LC")) 
+
+```
+
+```{r}
+#Import veg map datatable add veg names and biomes and bioregions to results  
+veg <- vect("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_change.gdb", "NVM2024Final_IEM5_12_07012025")
+
+tb_veg <- as_tibble(veg)
+tb_veg <- tb_veg %>% 
+  select(c(T_MAPCODE, T_Name)) %>%
+  distinct(T_MAPCODE, T_Name) %>%
+  filter(T_MAPCODE != "<Null>", T_MAPCODE != "")
+
+rle_vegw <- rle_vegw %>%
+inner_join(tb_veg, by = "T_MAPCODE") %>%
+relocate(T_Name, .after = BIOME)
+    
+#write to csv
+write.csv(rle_vegw, file = "outputs/results_df_A2b_A3.csv") 
+
+```
+
+Summary for using NBA packages , this can be repeated once we have assigned the highest risk category for each type.
+
+```{r}
+# test Tasha's package for graphs and table by summarising this assessment
+# summarise by counting the number of ecosystem types in each Risk Category per Biome, then add the overall number of ecosystems per ecosystem in each risk category 
+# this is not working yet 
+results_a2a3 <- rveg_rle_w_a2a3 %>% 
+    select(c(T_MAPCODE,T_BIOME, A2b, A3)) %>%
+    mutate(A2b_v = ifelse(A2b =="CR", 4,
+                          ifelse(A2b =="EN", 3, 
+                          ifelse(A2b =="VU", 2, 1))),
+           A3_v = ifelse(A3 =="CR", 4,
+                         ifelse(A3 =="EN", 3, 
+                         ifelse(A3 =="VU", 2, 1)))) %>% #make numeric to get highest value and thus worse risk category
+    mutate(A2bA3 = ifelse(A2b_v >= A3_v, A2b, A3))%>%
+    group_by(T_BIOME, A2bA3) %>% 
+    summarize(RLE_A2bA3 = n(), .groups = 'drop_last') %>% #.groups='drop_last' just stops a warning that is irritating not required
+    pivot_wider(names_from = A2bA3, values_from = RLE_A2bA3)%>%
+    relocate(c(CR, EN, VU, LC), .after = T_BIOME) %>%
+    replace(is.na(.), 0) %>%
+    adorn_totals(., where=c("row", "col")) #add totals easily using Janitor package
+
+
+
+
+
+
+```

@@ -1,0 +1,3 @@
+"0","rall <- read_csv(""lc7_rall.csv"", show_col_types = FALSE) #import the version NOT masked to SA 
+"
+"2","New names:"
