@@ -1,6 +1,6 @@
 ---
 title: "Terrestrial Red List of Ecosystems (South Africa)"
-subtitle: "Spatial analysis workflow - RLE Criteria A2b and A3"
+subtitle: "Spatial analysis workflows - supporting RLE Criteria A2b, A3 & D3"
 author: "SANBI"
 date: January  2025
 format: 
