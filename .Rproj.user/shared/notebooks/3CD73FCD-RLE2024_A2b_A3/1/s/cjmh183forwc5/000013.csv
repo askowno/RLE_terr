@@ -1,7 +1,0 @@
-"0","#write to csv
-write.csv(rle_vegw, file = ""C:/Rdata/RLE2024/results_df_A2b_A3.csv"") 
-"
-"2","Warning: cannot open file 'C:/Rdata/RLE2024/results_df_A2b_A3.csv': No such file or directory"
-"2","Error in file(file, ifelse(append, ""a"", ""w"")) : 
-  cannot open the connection
-"
