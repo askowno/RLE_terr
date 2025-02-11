@@ -1,0 +1,120 @@
+---
+title: "Terrestrial Red List of Ecosystems (South Africa)"
+subtitle: "Spatial analysis workflows - supporting RLE Criteria A3"
+author: "SANBI"
+date: January  2025
+format: 
+ html:
+  toc: true
+  toc-location: left
+  embed-resources: true
+editor: visual
+execute: 
+  eval: false
+bibliography: references.bib
+---
+
+## Red List of Ecosystems (terrestrial) workflows for Criterion A3
+
+### Approach
+
+Undertake analyses usually done in excel in R - to improve reproducibility and transparency of workflows for the Red List of Ecosystems.
+
+Import the results of a spatial analysis (R terra) that combined land cover data for 1990, 2014, 2018, 2020 and 2022 with national vegetation map data (2024 version). The cross tabulation (using R, Terra) of terrestrial ecosystem types (vegetation) data with land cover change data for South Africa is described in workflow "LC_change_7class_veg24.qmd". This allows for the calculation of the natural remaining extent for each ecosystem type at each time point across full extent of the ecosystem. The rate of habitat loss over the last 32 years can then be calculated allowing for assessment of each type using Criterion A2b. The metrics also allow for the extent of each type to be expressed as a percentage of its historical potential extent which is required for Criterion A3[@keith2013]; [@skowno2021c].
+
+```{mermaid}
+# add workflow
+```
+
+### Load required packages
+
+```{r}
+library(tidyverse)
+library(terra)
+library(PROJ)
+```
+
+### Import data from spatial analysis
+
+```{r}
+rall <- read_csv("C:/Rdata/LCC_terr/outputs/lc7_rall.csv", show_col_types = FALSE) #import the version NOT masked to SA and save in chosen location 
+#file available at:https://github.com/askowno/LLC_terr/blob/main/outputs/lc7_rall.csv
+```
+
+### Adjust input data for RLE analysis
+
+Make data wider, and add reference time point of 1750 (calculated by adding natural and not natural extent of each ecosystem type). Then calculate the proportion of each type remaining in a natural state.
+
+```{r}
+# Adjust input data from spatial analysis and prepare for RLE analysis   
+rall_clean <- rall %>%   
+  mutate(LC = ifelse(LC == 1, "nat", "notnat")) %>% #reclassify lc7class to binary 
+  select(-n & -LC7_text & -...1) %>% # clean up dataset of unnessessary fields
+  #filter(YEAR != 1750) %>% # remove and add later as this creates Null rows for empty classes when using wide approach....   
+  group_by(LC, YEAR, BIOME, T_MAPCODE) %>% # consolidate the duplicate rows following reclass   
+  summarise(km2 = sum(km2),.groups = "drop") 
+
+```
+
+### Ecosystem extent - A3
+
+Calculate the natural remaining extent of each ecosystem type at each time point. This is a simple process of expressing the current (remaining) natural extent (km2) of each ecosystem type as a proportion of the historical/potential extent.
+
+```{r}
+# Summarise the data  for Criterion A3  assessment (remaining extent at each time point)  - Make table (long) with extent remaining and proportion natural at each year. 
+
+proprem_l <- rall_clean %>%
+  group_by(T_MAPCODE, YEAR, LC) %>%
+  summarise(km2 = sum(km2), .groups = "drop") %>%
+  group_by(T_MAPCODE,YEAR) %>%
+  mutate(prop_nat = ifelse(LC == "nat", km2 / sum(km2), NA)) %>%
+  filter(LC == "nat") %>%
+  select( T_MAPCODE, YEAR, km2, prop_nat)
+
+rle_terr_A3 <- proprem_l %>%
+      mutate(A3 = case_when(1-prop_nat >= 0.9 ~ "CR",
+                  1-prop_nat >= 0.7 ~ "EN",
+                  1-prop_nat >= 0.5 ~ "VU",
+                  TRUE ~ "LC")) 
+# write results
+write.csv(rle_terr_A3, file = "outputs/results_A3.csv") 
+
+#########################
+# make wide results 
+proprem_w <- rall_clean %>%
+  group_by(T_MAPCODE, YEAR, LC) %>%
+  summarise(km2 = sum(km2), .groups = "drop") %>%
+  filter(LC == "nat") %>%
+    pivot_wider(names_from = YEAR, values_from = km2) %>%
+   mutate(prop_nat1990 = `1990`/`1750`, 
+          prop_nat2014 = `2014`/`1750`, 
+          prop_nat2018 = `2018`/`1750`,
+          prop_nat2020 = `2020`/`1750`,
+          prop_nat2022 = `2022`/`1750`,)
+
+rle_terr_A3w <- proprem_w %>%
+      mutate(A3_1990 = case_when(1-prop_nat1990 >= 0.9 ~ "CR",
+                  1-prop_nat1990 >= 0.7 ~ "EN",
+                  1-prop_nat1990 >= 0.5 ~ "VU",
+                  TRUE ~ "LC"), 
+             A3_2014 = case_when(1-prop_nat2014 >= 0.9 ~ "CR",
+                  1-prop_nat2014 >= 0.7 ~ "EN",
+                  1-prop_nat2014 >= 0.5 ~ "VU",
+                  TRUE ~ "LC"), 
+             A3_2018 = case_when(1-prop_nat2018 >= 0.9 ~ "CR",
+                  1-prop_nat2018 >= 0.7 ~ "EN",
+                  1-prop_nat2018 >= 0.5 ~ "VU",
+                  TRUE ~ "LC"), 
+             A3_2020 = case_when(1-prop_nat2020 >= 0.9 ~ "CR",
+                  1-prop_nat2020 >= 0.7 ~ "EN",
+                  1-prop_nat2020 >= 0.5 ~ "VU",
+                  TRUE ~ "LC"), 
+             A3_2022 = case_when(1-prop_nat2022 >= 0.9 ~ "CR",
+                  1-prop_nat2022 >= 0.7 ~ "EN",
+                  1-prop_nat2022 >= 0.5 ~ "VU",
+                  TRUE ~ "LC")) 
+
+# write results
+write.csv(rle_terr_A3w, file = "outputs/results_A3w.csv") 
+  
+```

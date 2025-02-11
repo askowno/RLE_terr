@@ -1,0 +1,199 @@
+---
+title: "Terrestrial Red List of Ecosystems (South Africa)"
+subtitle: "Spatial analysis workflows - supporting RLE Criteria A2b"
+author: "SANBI"
+date: January  2025
+format: 
+ html:
+  toc: true
+  toc-location: left
+  embed-resources: true
+editor: visual
+execute: 
+  eval: false
+bibliography: references.bib
+---
+
+## Red List of Ecosystems (terrestrial) workflows for Criterion A2b
+
+### Approach
+
+Undertake analyses usually done in excel in R - to improve reproducibility and transparency of workflows for the Red List of Ecosystems.
+
+Import the results of a spatial analysis (R terra) that combined land cover data for 1990, 2014, 2018, 2020 and 2022 with national vegetation map data (2024 version). The cross tabulation (using R, Terra) of terrestrial ecosystem types (vegetation) data with land cover change data for South Africa is described in workflow "LC_change_7class_veg24.qmd". This allows for the calculation of the natural remaining extent for each ecosystem type at each time point across full extent of the ecosystem. The rate of habitat loss over the last 32 years can then be calculated allowing for assessment of each type using Criterion A2b ([@keith2013]; [@skowno2021c]).
+
+```{mermaid}
+# add workflow
+```
+
+### Load required packages
+
+```{r}
+library(tidyverse)
+library(terra)
+library(PROJ)
+```
+
+### Import data from spatial analysis
+
+```{r}
+rall <- read_csv("C:/Rdata/LCC_terr/outputs/lc7_rall.csv", show_col_types = FALSE) #import the version NOT masked to SA and save in chosen location 
+#file available at:https://github.com/askowno/LLC_terr/blob/main/outputs/lc7_rall.csv
+```
+
+### Adjust input data for RLE analysis
+
+Make data wider, and add reference time point of 1750 (calculated by adding natural and not natural extent of each ecosystem type). Then calculate the proportion of each type remaining in a natural state.
+
+```{r}
+# Adjust input data from spatial analysis and prepare for RLE analysis   
+rall_clean <- rall %>%   
+  mutate(LC = ifelse(LC == 1, "nat", "notnat")) %>% #reclassify lc7class to binary 
+  select(-n & -LC7_text & -...1) %>% # clean up dataset of unnessessary fields
+  #filter(YEAR != 1750) %>% # remove and add later as this creates Null rows for empty classes when using wide approach....   
+  group_by(LC, YEAR, BIOME, T_MAPCODE) %>% # consolidate the duplicate rows following reclass   
+  summarise(km2 = sum(km2),.groups = "drop") 
+
+```
+
+### Rate of decline in extent - A2b
+
+Compute the absolute rate of decline in ecosystem extent (ARD) over the period 1990 to 2022, the period 1990-2014, 2014-2022 and 2018-2022 (to provide recent trend). This ARD can be used to estimate ecosystem extent in 2040 to allow for computation of Criterion A2b (recent and ongoing declines). The simplest approach is to calculate the rate of decline in natural extent per year and then multiply by 50 to get the projected extent in 2040 (i.e. ext2040 = ARD9022 / 32 \* 50 ). Then subtract this from the 1990 extent and divide by the 1990 ext to get the proportional decline in extent over a 50 year period (i.e. proportion lost over 50 years = (ext1990 - ext2040/ext1990) . In addition to this we projected the 2040 extent using ARD for 1990-2014 (previous), for 2014-2022, for 2018-2022 (to provide recent trends). To complement these simple calculations we included three models of decline i) linear, ii) quadratic and iii) a monotonic spline.
+
+RoD (%/y) is an additional metric (i.e. R0D9022 = ARD9022/32) used in Criterion B as evidence of ongoing decline (if the ROD \>= 0.4%/y), for the revised assessment the ROD for three periods was calculated to allow assessor to gauge the level of ongoing threat that habitat loss presents (i.e. RoD9022, RoD9014, RoD1422 an dRoD1822 were calculated).
+
+```{r}
+# Calculate the rate of loss metrics for Criterion A2b calculations
+# start with basic absolute rate of decline over three periods 1990-2022 (main period) 1990-2014 (previous period) and 2014 - 2022 (recent period)
+# this is then followed by adding two modelled estimates of decline 1990-2022 using linear and quadratic models. 
+
+options(scipen = 999)
+rateloss <- rall_clean %>%   
+  filter(LC != "notnat") %>%
+  select(-BIOME, -LC) %>%
+  pivot_wider(names_from = YEAR, values_from = km2) %>%   
+    mutate(pnat_1990 = `1990` / `1750`, 
+         pnat_2014 = `2014` / `1750`,           
+         pnat_2018 = `2018` / `1750`,           
+         pnat_2020 = `2020` / `1750`,          
+         pnat_2022 = `2022` / `1750`) %>%
+    #correct small abberation on borders of SA caused by land cover extent differences 
+  mutate(`2014` = pmin(`1990`, `2014`), `2018` = pmin(`2014`, `2018`), 
+         `2020` = pmin(`2018`, `2020`), `2022` = pmin(`2020`, `2022`)) %>%
+    mutate(ARD9022 = ((`1990` - `2022`)/ (2022-1990)), 
+         ARD9014 = ((`1990` - `2014`)/ (2014-1990)), 
+         ARD1422 = ((`2014` - `2022`)/ (2022-2014)),
+         ARD1822 = ((`2018` - `2022`)/ (2022-2018))) %>%
+   mutate(ROD9022 = (ARD9022/`1990`)*100, 
+          ROD9014 = (ARD9014/`1990`)*100,
+          ROD1422 = (ARD1422/`2014`)*100,
+          ROD1822 = (ARD1822/`2014`)*100) %>%
+  mutate(nat_2040_ard9022 = `1990` - (ARD9022 * 50),
+         nat_2040_ard9014 = `1990` - (ARD9014 * 50),
+         nat_2040_ard1422 = `1990` - (ARD1422 * 50), 
+         nat_2040_ard1822 = `1990` - (ARD1822 * 50))
+
+```
+
+```{r}
+# For Criterion A2b which projects future level of habitat loss (in this study to 2040) we have used a simplistic model (above) of decline using the first and last time points (1990 and 2022). In this code we model the rate of decline using a linear model and a quadratic model (polynomial) to more accuratley estimate remaining natural habitat in 2040. 
+
+df_filtered <- rall_clean %>%
+  filter(YEAR %in% c(1990, 2014, 2018, 2020, 2022), LC=="nat") 
+
+# Fit a linear model for each T_MAPCODE
+model_results_lm <- df_filtered %>%
+  group_by(T_MAPCODE) %>%
+  do(model = lm(km2 ~ YEAR, data = .))
+# Predict extent in 2040 using linear model 
+predictions_lm <- model_results_lm %>%
+  mutate(pred2040lm = predict(model, newdata = data.frame(YEAR = 2040))) %>%
+  select(T_MAPCODE, pred2040lm)
+#-----------------------------------------
+# Fit a quadratic model for each T_MAPCODE
+model_results_poly <- df_filtered %>%
+  group_by(T_MAPCODE) %>%
+  do(model = lm(km2 ~ poly(YEAR, 2), data = .))
+# Predict extent in 2040 for each T_MAPCODE
+predictions_poly <- model_results_poly %>%
+  mutate(pred2040poly = predict(model, newdata = data.frame(YEAR = 2040))) %>%
+  select(T_MAPCODE, pred2040poly)
+#------------------------------------------
+# Fit a spline model for each T_MAPCODE
+model_results_spline <- df_filtered %>%
+  group_by(T_MAPCODE) %>%
+  summarise(model = list(splinefun(YEAR, km2, method = "natural")), 
+            .groups = "drop")
+# Predict extent in 2040 using the spline model
+predictions_spline <- model_results_spline %>%
+  mutate(pred2040spline = map_dbl(model, ~ .x(2040))) %>%
+  select(T_MAPCODE, pred2040spline)
+
+
+# Add the predictions of extent in 20240 using linear and polynomial to the rateloss tibble
+
+rateloss_pred <- rateloss %>%
+  inner_join(predictions_lm, by = "T_MAPCODE") %>%
+  inner_join(predictions_poly, by = "T_MAPCODE") %>%
+  inner_join(predictions_spline, by = "T_MAPCODE") %>%
+  mutate(prplost50_9022 = (`1990` - nat_2040_ard9022)/ `1990`, 
+         prplost50_9014 = (`1990` - nat_2040_ard9014)/ `1990`,
+         prplost50_1422 = (`1990` - nat_2040_ard1422)/ `1990`,
+         prplost50_lm   = (`1990` - pred2040lm)/ `1990`,
+         prplost50_poly = (`1990` - pred2040poly)/ `1990`,
+         prplost50_spline = (`1990` - pred2040spline)/ `1990`)
+```
+
+```{r}
+#Compute metrics required for RLE (Absolute Rate of Decline (km2/year), Rate of Decline (%/year), Proportion Lost over 50years, Projected extent in 2040). And then assess Criterion A3 and A2b
+
+rle_terr_A2b <- rateloss_pred %>%
+  mutate(A2b_9022 = case_when(prplost50_9022 >= 0.8 ~ "CR",
+                   prplost50_9022 >= 0.5 ~ "EN",
+                   prplost50_9022 >= 0.3 ~ "VU",
+                  TRUE ~ "LC"), 
+         A2b_9014 = case_when(prplost50_9014 >= 0.8 ~ "CR",
+                   prplost50_9014 >= 0.5 ~ "EN",
+                   prplost50_9014 >= 0.3 ~ "VU",
+                  TRUE ~ "LC"),
+         A2b_1422 = case_when(prplost50_1422 >= 0.8 ~ "CR",
+                   prplost50_1422 >= 0.5 ~ "EN",
+                   prplost50_1422 >= 0.3 ~ "VU",
+                  TRUE ~ "LC"), 
+         A2b_lm = case_when(prplost50_lm >= 0.8 ~ "CR",
+                   prplost50_lm >= 0.5 ~ "EN",
+                   prplost50_lm >= 0.3 ~ "VU",
+                  TRUE ~ "LC"), 
+         A2b_poly = case_when(prplost50_poly >= 0.8 ~ "CR",
+                   prplost50_poly >= 0.5 ~ "EN",
+                   prplost50_poly >= 0.3 ~ "VU",
+                  TRUE ~ "LC"), 
+          A2b_spline = case_when(prplost50_spline >= 0.8 ~ "CR",
+                   prplost50_spline >= 0.5 ~ "EN",
+                   prplost50_spline >= 0.3 ~ "VU",
+                  TRUE ~ "LC"))    
+    
+# write results
+write.csv(rle_terr_A2b, file = "outputs/results_A2b.csv")
+```
+
+```{r}
+##NOT COMPLETED 
+
+#Import veg map datatable add veg names and biomes and bioregions to results  
+veg <- vect("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_change.gdb", "NVM2024Final_IEM5_12_07012025")
+
+tb_veg <- as_tibble(veg)
+tb_veg <- tb_veg %>% 
+  select(c(T_MAPCODE, T_Name)) %>%
+  distinct(T_MAPCODE, T_Name) %>%
+  filter(T_MAPCODE != "<Null>", T_MAPCODE != "")
+
+rle_vegw <- rle_vegw %>%
+inner_join(tb_veg, by = "T_MAPCODE") %>%
+relocate(T_Name, .after = BIOME)
+    
+#write to csv
+write.csv(rle_vegw, file = "outputs/results_df_A2b_A3.csv") 
+
+```
