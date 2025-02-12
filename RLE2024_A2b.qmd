@@ -22,10 +22,6 @@ Undertake analyses usually done in excel in R - to improve reproducibility and t
 
 Import the results of a spatial analysis (R terra) that combined land cover data for 1990, 2014, 2018, 2020 and 2022 with national vegetation map data (2024 version). The cross tabulation (using R, Terra) of terrestrial ecosystem types (vegetation) data with land cover change data for South Africa is described in workflow "LC_change_7class_veg24.qmd". This allows for the calculation of the natural remaining extent for each ecosystem type at each time point across full extent of the ecosystem. The rate of habitat loss over the last 32 years can then be calculated allowing for assessment of each type using Criterion A2b ([@keith2013]; [@skowno2021c]).
 
-```{mermaid}
-# add workflow
-```
-
 ### Load required packages
 
 ```{r}
@@ -88,11 +84,10 @@ rateloss <- rall_clean %>%
           ROD9014 = (ARD9014/`1990`)*100,
           ROD1422 = (ARD1422/`2014`)*100,
           ROD1822 = (ARD1822/`2014`)*100) %>%
-  mutate(nat_2040_ard9022 = `1990` - (ARD9022 * 50),
-         nat_2040_ard9014 = `1990` - (ARD9014 * 50),
-         nat_2040_ard1422 = `1990` - (ARD1422 * 50), 
-         nat_2040_ard1822 = `1990` - (ARD1822 * 50))
-
+   mutate(nat_2040_ard9022 = pmax(0, `1990` - (ARD9022 * 50)),
+    nat_2040_ard9014 = pmax(0, `1990` - (ARD9014 * 50)),
+    nat_2040_ard1422 = pmax(0, `1990` - (ARD1422 * 50)),
+    nat_2040_ard1822 = pmax(0, `1990` - (ARD1822 * 50)))
 ```
 
 ```{r}
@@ -107,7 +102,7 @@ model_results_lm <- df_filtered %>%
   do(model = lm(km2 ~ YEAR, data = .))
 # Predict extent in 2040 using linear model 
 predictions_lm <- model_results_lm %>%
-  mutate(pred2040lm = predict(model, newdata = data.frame(YEAR = 2040))) %>%
+  mutate(pred2040lm = pmax(0, predict(model, newdata = data.frame(YEAR = 2040)))) %>%
   select(T_MAPCODE, pred2040lm)
 #-----------------------------------------
 # Fit a quadratic model for each T_MAPCODE
@@ -116,7 +111,7 @@ model_results_poly <- df_filtered %>%
   do(model = lm(km2 ~ poly(YEAR, 2), data = .))
 # Predict extent in 2040 for each T_MAPCODE
 predictions_poly <- model_results_poly %>%
-  mutate(pred2040poly = predict(model, newdata = data.frame(YEAR = 2040))) %>%
+  mutate(pred2040poly = pmax(0, predict(model, newdata = data.frame(YEAR = 2040)))) %>%
   select(T_MAPCODE, pred2040poly)
 #------------------------------------------
 # Fit a spline model for each T_MAPCODE
@@ -126,9 +121,8 @@ model_results_spline <- df_filtered %>%
             .groups = "drop")
 # Predict extent in 2040 using the spline model
 predictions_spline <- model_results_spline %>%
-  mutate(pred2040spline = map_dbl(model, ~ .x(2040))) %>%
+  mutate(pred2040spline = pmax(0, map_dbl(model, ~ .x(2040)))) %>%
   select(T_MAPCODE, pred2040spline)
-
 
 # Add the predictions of extent in 20240 using linear and polynomial to the rateloss tibble
 
@@ -139,6 +133,7 @@ rateloss_pred <- rateloss %>%
   mutate(prplost50_9022 = (`1990` - nat_2040_ard9022)/ `1990`, 
          prplost50_9014 = (`1990` - nat_2040_ard9014)/ `1990`,
          prplost50_1422 = (`1990` - nat_2040_ard1422)/ `1990`,
+          prplost50_1822 = (`1990` - nat_2040_ard1822)/ `1990`,
          prplost50_lm   = (`1990` - pred2040lm)/ `1990`,
          prplost50_poly = (`1990` - pred2040poly)/ `1990`,
          prplost50_spline = (`1990` - pred2040spline)/ `1990`)
@@ -160,7 +155,11 @@ rle_terr_A2b <- rateloss_pred %>%
                    prplost50_1422 >= 0.5 ~ "EN",
                    prplost50_1422 >= 0.3 ~ "VU",
                   TRUE ~ "LC"), 
-         A2b_lm = case_when(prplost50_lm >= 0.8 ~ "CR",
+         A2b_1822 = case_when(prplost50_1822 >= 0.8 ~ "CR",
+                   prplost50_1822 >= 0.5 ~ "EN",
+                   prplost50_1822 >= 0.3 ~ "VU",
+                  TRUE ~ "LC"), 
+          A2b_lm = case_when(prplost50_lm >= 0.8 ~ "CR",
                    prplost50_lm >= 0.5 ~ "EN",
                    prplost50_lm >= 0.3 ~ "VU",
                   TRUE ~ "LC"), 
@@ -181,19 +180,19 @@ write.csv(rle_terr_A2b, file = "outputs/results_A2b.csv")
 ##NOT COMPLETED 
 
 #Import veg map datatable add veg names and biomes and bioregions to results  
-veg <- vect("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_change.gdb", "NVM2024Final_IEM5_12_07012025")
-
-tb_veg <- as_tibble(veg)
-tb_veg <- tb_veg %>% 
-  select(c(T_MAPCODE, T_Name)) %>%
-  distinct(T_MAPCODE, T_Name) %>%
-  filter(T_MAPCODE != "<Null>", T_MAPCODE != "")
-
-rle_vegw <- rle_vegw %>%
-inner_join(tb_veg, by = "T_MAPCODE") %>%
-relocate(T_Name, .after = BIOME)
-    
-#write to csv
-write.csv(rle_vegw, file = "outputs/results_df_A2b_A3.csv") 
+# veg <- vect("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_change.gdb", "NVM2024Final_IEM5_12_07012025")
+# 
+# tb_veg <- as_tibble(veg)
+# tb_veg <- tb_veg %>% 
+#   select(c(T_MAPCODE, T_Name)) %>%
+#   distinct(T_MAPCODE, T_Name) %>%
+#   filter(T_MAPCODE != "<Null>", T_MAPCODE != "")
+# 
+# rle_vegw <- rle_vegw %>%
+# inner_join(tb_veg, by = "T_MAPCODE") %>%
+# relocate(T_Name, .after = BIOME)
+#     
+# #write to csv
+# write.csv(rle_vegw, file = "outputs/results_df_A2b_A3.csv") 
 
 ```
