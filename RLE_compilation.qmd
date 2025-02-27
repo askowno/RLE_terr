@@ -84,12 +84,12 @@ RLE_A3_compiled <- RLE_A3_compiled %>%
  
 # Add A2b general model 1990- 2022 decline
 results_A2b <- results_A2b %>%
-  select(prplost50_9022, A2b_9022, T_MAPCODE)
+  select(prplost50_9022, A2b_9022, T_MAPCODE, ROD9022,ROD9014, ROD1822)
 
 # Join A3 and A2 results compilations
 RLE_A2bA3_compiled <- RLE_A3_compiled %>%
   inner_join(results_A2b, by =  "T_MAPCODE") %>%
-  select(T_MAPCODE, A3_fin, A3_source, A3_prplost, A2b_9022, prplost50_9022) %>%
+  select(T_MAPCODE, A3_fin, A3_source, A3_prplost, A2b_9022, prplost50_9022, ROD9022, ROD9014, ROD1822) %>%
   rename(A2b_prplost50 = prplost50_9022)
  
 # write results
