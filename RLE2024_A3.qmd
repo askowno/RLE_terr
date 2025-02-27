@@ -84,7 +84,7 @@ write.csv(rle_terr_A3, file = "outputs/results_A3.csv")
 proprem_w <- rall_clean %>%
   group_by(T_MAPCODE, YEAR, LC) %>%
   summarise(km2 = sum(km2), .groups = "drop") %>%
-  filter(LC == "nat") %>%
+  filter(LC == "nat", T_MAPCODE != "NOTVEG") %>%
     pivot_wider(names_from = YEAR, values_from = km2) %>%
    mutate(prop_nat1990 = `1990`/`1750`, 
           prop_nat2014 = `2014`/`1750`, 

@@ -1,0 +1,146 @@
+Compiling all the RLE results and determining status for each vegetation type
+
+```{r}
+library(tidyverse)
+
+# import data
+alt_sum <- read.csv("C:/Rdata/LCC_terr/outputs/alt_sum.csv")
+step_sum <- read.csv("C:/Rdata/LCC_terr/outputs/step_sum.csv")
+lk_sum <- read.csv("C:/Rdata/LCC_terr/outputs/lk_sum.csv")
+coct_sum <- read.csv("C:/Rdata/LCC_terr/outputs/coct_sum.csv")
+nmb_sum <- read.csv("C:/Rdata/LCC_terr/outputs/nmb_sum.csv")
+results_A2b <- read.csv("C:/Rdata/RLE_terr/outputs/results_A2b.csv")
+results_A3nat <- read.csv("C:/Rdata/RLE_terr/outputs/results_A3w.csv")
+inv_rebelo <- read.csv("C:/Rdata/INV_terr/outputs/data_for_rle_rebelo_invwc.csv")
+inv_niaps <- read.csv("C:/Rdata/INV_terr/outputs/data_for_rle_niaps.csv")
+```
+
+Compile Criterion A and include extent within AOI so that the source of the supplementary assessment can be identified
+
+```{r}
+options(scipen =999)
+
+# Prepare for choosing highest threat category by ranking CR EN VUL LC
+rank_levels <- c("LC", "VU", "EN", "CR")
+
+# Join summary tables from each supplementary assessment
+RLE_A3_compiled <- results_A3nat %>%
+  inner_join(alt_sum, by = "T_MAPCODE") %>%
+  rename(A3_alt = A3) %>%
+  rename(A3_nat = A3_2022) %>%
+  inner_join(nmb_sum, by = "T_MAPCODE") %>%
+  rename(A3_nmb = A3) %>%
+  inner_join(coct_sum, by = "T_MAPCODE") %>%
+  rename(A3_coct = A3) %>%
+  select(T_MAPCODE, prop_nat2022, prplost.x, prplost.y, prplost, A3_nat, A3_alt, A3_nmb,  A3_coct, ext_wc, ext_kzn, ext_mpl, ext_nmb, ext_coct) %>%
+  mutate(across(A3_nat:A3_coct, ~factor(.x, levels = rank_levels, ordered = TRUE))) %>%
+  mutate(A3_nat = as.numeric(A3_nat)) %>%
+  mutate(A3_alt = as.numeric(A3_alt)) %>%
+  mutate(A3_nmb = as.numeric(A3_nmb)) %>%
+  mutate(A3_coct = as.numeric(A3_coct)) %>%
+  mutate(prplost_nat = 1- prop_nat2022) %>%
+  select(!prop_nat2022) %>%
+  rename(prplost_alt = prplost.x, prplost_nmb = prplost.y, prplost_coct = prplost ) %>%
+  relocate(prplost_nat, .before = prplost_alt)
+  
+
+
+# Convert A3_* columns to ordered factors
+RLE_A3_compiled <- RLE_A3_compiled %>%
+  rowwise() %>%
+  mutate(
+    # Calculate A3_fin as the maximum rank across columns (ordered factors are automatically ranked)
+    A3_fin = max(c_across(A3_nat:A3_coct), na.rm = TRUE)
+  ) %>%
+  mutate(
+    source = case_when(A3_fin == A3_nat & 
+                            ext_wc < 0.95 & ext_mpl< 0.95 &  
+                            ext_kzn < 0.95 & ext_nmb < 0.95 & ext_coct < 0.95 ~ "A3_nat",
+                          A3_nat == A3_coct & ext_coct > 0.95 ~ "A3_nat, A3_coct",
+                          A3_nat == A3_alt & ext_wc > 0.95 ~ "A3_nat, A3_wc",
+                          A3_nat == A3_alt & ext_kzn > 0.95 ~ "A3_nat, A3_kzn",
+                          A3_nat == A3_alt & ext_mpl > 0.95 ~ "A3_nat, A3_mpl",
+                          A3_nat  == A3_nmb & ext_nmb > 0.95 ~ "A3_nat, A3_nmb",
+                          A3_alt > A3_nat & ext_wc >0.95 ~ "A3_wc",
+                          A3_alt > A3_nat & ext_kzn >0.95 ~ "A3_kzn",
+                          A3_alt > A3_nat & ext_mpl >0.95 ~ "A3_mpl",
+                          A3_nmb > A3_nat ~ "A3_nmb", 
+                          A3_coct > A3_nat ~ "A3_coct", 
+                          TRUE ~ "A3_nat")) %>%
+  mutate(across(starts_with("A3"), ~ factor(recode(., `1` = "LC", `2` = "VU", `3` = "EN", `4` = "CR"), levels = rank_levels, ordered = TRUE))) %>%
+  rename(A3_source = source) %>%
+  mutate(A3_prplost = case_when(A3_source == "A3_nat" ~ prplost_nat,
+                                A3_source == "A3_wc" | A3_source == "A3_kzn" | A3_source == "A3_mpl"  ~ prplost_alt, 
+                                A3_source =="A3_nat, A3_kzn"  ~ prplost_alt, 
+                                A3_source =="A3_nat, A3_wc"   ~ prplost_alt, 
+                                A3_source =="A3_nat, A3_mpl"  ~ prplost_alt,  
+                                A3_source =="A3_nmb"  ~ prplost_nmb, 
+                                A3_source =="A3_nat, A3_nmb"  ~ prplost_nmb, 
+                                A3_source =="A3_coct"  ~ prplost_coct, 
+                                A3_source =="A3_nat, A3_coct"  ~ prplost_coct,
+                                TRUE ~ 0)) %>%
+  mutate(A3_prplost = pmax(A3_prplost, 0)) 
+
+ 
+# Add A2b general model 1990- 2022 decline
+results_A2b <- results_A2b %>%
+  select(prplost50_9022, A2b_9022, T_MAPCODE)
+
+# Join A3 and A2 results compilations
+RLE_A2bA3_compiled <- RLE_A3_compiled %>%
+  inner_join(results_A2b, by =  "T_MAPCODE") %>%
+  select(T_MAPCODE, A3_fin, A3_source, A3_prplost, A2b_9022, prplost50_9022) %>%
+  rename(A2b_prplost50 = prplost50_9022)
+ 
+# write results
+write.csv(RLE_A2bA3_compiled, file = "outputs/RLE_A2bA3_compiled.csv")                               
+                              
+   
+```
+
+Compile Criterion D and include extent so that the source of the assessment can be identified
+
+```{r}
+
+# Prepare for choosing highest threat category by ranking CR EN VUL LC
+rank_levels <- c("LC", "VU", "EN", "CR")
+
+# Join summary tables from each supplementary assessment
+RLE_D_compiled <- coct_sum %>%
+  rename(D3_coct = D3, prpdeg_coct = prpdeg) %>%
+  inner_join(nmb_sum, by = "T_MAPCODE") %>%
+  rename(D3_nmb = D3, prpdeg_nmb = prpdeg) %>%
+  inner_join(lk_sum, by = "T_MAPCODE") %>%
+  rename(prpdeg_lk = prpdeg) %>%
+  inner_join(step_sum, by = "T_MAPCODE") %>%
+  select(T_MAPCODE, D3_coct, D3_nmb, D3_lk, D3_step, ext_coct, ext_nmb, ext_lk, ext_step, prpdeg_coct, prpdeg_nmb, prpdeg_lk, prpdeg_step) %>%
+ mutate(D3_fin = D3_step) %>%
+  mutate(D3_source = case_when(ext_coct > 0.95 ~ "D3_coct", 
+                               ext_nmb > 0.95 ~ "D3_nmb", 
+                               ext_lk > 0.95 ~ "D3_lk", 
+                               ext_step > 0.95 ~ "D3_step", 
+                               TRUE ~ "")) %>%
+  mutate(D3_prpdeg = case_when(D3_source == "D3_coct"  ~ prpdeg_coct, 
+                                D3_source =="D3_nmb"  ~ prpdeg_nmb,  
+                                D3_source =="D3_lk"  ~ prpdeg_lk,  
+                                D3_source =="D3_step"  ~ prpdeg_step,   
+                                TRUE ~ 0)) %>%
+  select(T_MAPCODE, D3_fin, D3_source, D3_prpdeg) 
+  
+  # Add invasives data
+  inv_niaps <- inv_niaps %>%
+    select(T_MAPCODE, niaps_ext50, niaps_ext70, niaps_ext90, D3_niaps)
+  inv_rebelo <- inv_rebelo %>%
+    select(T_MAPCODE, prop_rem_aoi, prop_inv, D3test)
+  
+  RLE_D_compiled <- RLE_D3_compiled %>%
+     inner_join(inv_niaps, by = "T_MAPCODE") %>%
+     inner_join(inv_rebelo, by = "T_MAPCODE") %>%
+     rename(ext_cfr_iat = prop_rem_aoi, D3_cfr_iat = D3test, prpdeg_cfr_iat =      prop_inv, prpdeg50_niaps = niaps_ext50, prpdeg70_niaps = niaps_ext70, prpdeg90_niaps = niaps_ext90)
+  
+
+
+# write results
+write.csv(RLE_D_compiled, file = "outputs/RLE_D_compiled.csv")   
+  
+```

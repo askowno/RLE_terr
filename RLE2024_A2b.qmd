@@ -65,7 +65,7 @@ RoD (%/y) is an additional metric (i.e. R0D9022 = ARD9022/32) used in Criterion 
 
 options(scipen = 999)
 rateloss <- rall_clean %>%   
-  filter(LC != "notnat") %>%
+  filter(LC != "notnat", T_MAPCODE != "NOTVEG") %>%
   select(-BIOME, -LC) %>%
   pivot_wider(names_from = YEAR, values_from = km2) %>%   
     mutate(pnat_1990 = `1990` / `1750`, 
