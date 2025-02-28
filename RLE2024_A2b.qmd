@@ -35,6 +35,9 @@ library(PROJ)
 ```{r}
 rall <- read_csv("C:/Rdata/LCC_terr/outputs/lc7_rall.csv", show_col_types = FALSE) #import the version NOT masked to SA and save in chosen location 
 #file available at:https://github.com/askowno/LLC_terr/blob/main/outputs/lc7_rall.csv
+
+# load EOO and AOO for Criterion B assessment (ongoing decline)
+eoo <- read_csv("C:/Rdata/RLE_terr/outputs/EOO_AOO_from_redlistr.csv")
 ```
 
 ### Adjust input data for RLE analysis
@@ -171,28 +174,26 @@ rle_terr_A2b <- rateloss_pred %>%
                    prplost50_spline >= 0.5 ~ "EN",
                    prplost50_spline >= 0.3 ~ "VU",
                   TRUE ~ "LC"))    
-    
+
 # write results
 write.csv(rle_terr_A2b, file = "outputs/results_A2b.csv")
 ```
 
 ```{r}
-##NOT COMPLETED 
+# use the ROD as a qualifier for Criterion B assessments - the logic is that rapid ongoing rates of habitat loss  are sufficient evidence of "ongoing decline" for range restricted ecosystems types. 
 
-#Import veg map datatable add veg names and biomes and bioregions to results  
-# veg <- vect("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_change.gdb", "NVM2024Final_IEM5_12_07012025")
-# 
-# tb_veg <- as_tibble(veg)
-# tb_veg <- tb_veg %>% 
-#   select(c(T_MAPCODE, T_Name)) %>%
-#   distinct(T_MAPCODE, T_Name) %>%
-#   filter(T_MAPCODE != "<Null>", T_MAPCODE != "")
-# 
-# rle_vegw <- rle_vegw %>%
-# inner_join(tb_veg, by = "T_MAPCODE") %>%
-# relocate(T_Name, .after = BIOME)
-#     
-# #write to csv
-# write.csv(rle_vegw, file = "outputs/results_df_A2b_A3.csv") 
+rle_A2b_B_rod_sum <- rle_terr_A2b %>%
+ left_join(eoo, "T_MAPCODE") %>%
+  mutate(ROD9022_rounded = round(ROD9022, 1)) %>%
+  mutate(B1i_rod = case_when(EOO <= 2000 & ROD9022_rounded >= 0.4 ~ "CR", 
+                                  EOO <= 20000 & ROD9022_rounded >= 0.4 ~ "EN", 
+                                  EOO <= 50000 & ROD9022_rounded >= 0.4 ~ "VU", 
+                                  TRUE ~ "LC")) %>%
+  mutate(B2i_rod = case_when(AOO <= 2 & ROD9022_rounded >= 0.4 ~ "CR", 
+                                  AOO <= 20 & ROD9022_rounded >= 0.4 ~ "EN", 
+                                  AOO <= 50 & ROD9022_rounded >= 0.4 ~ "VU", 
+                                  TRUE ~ "LC"))  
 
+# write results
+write.csv(rle_A2b_B_rod_sum, file = "outputs/results_A2b_B_ROD.csv")
 ```

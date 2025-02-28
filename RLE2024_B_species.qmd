@@ -1,0 +1,102 @@
+## Red List of Ecosystems (terrestrial) workflows for Criterion B1 and B2 using threatened species database
+
+### Approach
+
+Workflow for assessing Criterion B1 and B2 of the RLE using threatened plant species database as a source of information on ongoing decline due to biotic disruptions (invasive species, fire regime change and overgrazing).\
+
+```{r}
+library(tidyverse)
+
+# Import threatened plant species data - per ecosystem. Extracted from the RLS database in January 2025 by the SANBI TSU team. 
+
+th_sp_data <- read_csv("C:/Rdata/RLE_terr/outputs/TH_SP_from_tsu.csv", show_col_types = FALSE)
+th_sp_data <- rename(th_sp_data, T_MAPCODE =VegCode)
+
+# load EOO and AOO for Criterion B assessment (ongoing decline)
+eoo <- read_csv("C:/Rdata/RLE_terr/outputs/EOO_AOO_from_redlistr.csv")
+
+# load results of A3 to obtain extent remaining of each type
+results_A3w <- read_csv("C:/Rdata/RLE_terr/outputs/results_A3w.csv")
+ext2022 <- results_A3w %>%
+  select(T_MAPCODE, `2022`) %>%
+  rename(ext2022 = `2022`)
+
+# extract numer of species threatened by fire in each veg type 
+fire <- th_sp_data %>%
+  filter(Threat == "Habitat degradation", SubThreat == "Fires", !`NATIONAL STATUS` %in% c("DDD", "Rare", "Critically Rare" ))  %>%
+  group_by(T_MAPCODE) %>%
+  summarise(sp_fire = n_distinct(Taxon), .groups = "drop")
+
+# extract numer of species threatened by invasives in each veg type 
+inv <- th_sp_data %>%
+  filter(Threat == "Invasive Alien Species (direct effects)", !`NATIONAL STATUS` %in% c("DDD", "Rare", "Critically Rare" ))  %>%
+  group_by(T_MAPCODE) %>%
+  summarise(sp_inv = n_distinct(Taxon), .groups = "drop")
+
+# extract numer of species threatened by livestock - overuse in each veg type 
+overg <- th_sp_data %>%
+  filter(Threat == "Habitat degradation", SubThreat == "Agriculture", SubSubThreat == "Livestock", !`NATIONAL STATUS` %in% c("DDD", "Rare", "Critically Rare" ))  %>%
+  group_by(T_MAPCODE) %>%
+  summarise(sp_overg = n_distinct(Taxon), .groups = "drop")
+
+# extract total numer of species threatened in each veg type 
+tot  <- th_sp_data %>%
+  filter(!`NATIONAL STATUS` %in% c("DDD", "Rare", "Critically Rare" ))  %>%
+  group_by(T_MAPCODE) %>%
+  summarise(sp_tot = n_distinct(Taxon), .groups = "drop") 
+  
+rle_b_sp_sum <- eoo %>%
+  left_join(tot, by = "T_MAPCODE") %>%
+  left_join(fire, by = "T_MAPCODE") %>%
+  left_join(inv, by = "T_MAPCODE") %>%
+  left_join(overg, by = "T_MAPCODE") %>%
+  mutate(across(everything(), ~ replace_na(.x, 0)))  %>% 
+  # Add the RLE Criterion B assessment steps
+  left_join(ext2022, "T_MAPCODE") %>%
+  mutate(sp_km2 = round(sp_tot/ext2022, 2)) %>% 
+  mutate(prp_fire = round(sp_fire/sp_tot, 1)) %>%
+  mutate(prp_inv = round(sp_inv/sp_tot, 1)) %>%
+  mutate(prp_overg = round(sp_overg/sp_tot, 1)) %>%
+  mutate(across(everything(), ~ ifelse(is.nan(.x), 0, .x))) %>%
+  mutate(B1iii_sp = case_when(EOO <= 2000 & 
+                               sp_km2 >= 0.15 &
+                                sp_tot >= 30 & 
+                                (prp_fire >= 0.6 | 
+                                  prp_overg >= 0.6 |
+                                   prp_inv >= 0.6 ) ~ "CR",
+                              EOO <= 20000 & 
+                               sp_km2 >= 0.15 &
+                                sp_tot >= 30 & 
+                                (prp_fire >= 0.6 | 
+                                  prp_overg >= 0.6 |
+                                   prp_inv >= 0.6 ) ~ "EN",
+                              EOO <= 50000 & 
+                               sp_km2 >= 0.15 &
+                                sp_tot >= 30 & 
+                                (prp_fire >= 0.6 | 
+                                  prp_overg >= 0.6 |
+                                   prp_inv >= 0.6 ) ~ "VU",
+                                TRUE ~ "LC" )) %>%
+  mutate(B2iii_sp = case_when(AOO <= 2 & 
+                               sp_km2 >= 0.15 &
+                                sp_tot >= 30 & 
+                                (prp_fire >= 0.6 | 
+                                  prp_overg >= 0.6 |
+                                   prp_inv >= 0.6 ) ~ "CR",
+                              AOO <= 20 & 
+                               sp_km2 >= 0.15 &
+                                sp_tot >= 30 & 
+                                (prp_fire >= 0.6 | 
+                                  prp_overg >= 0.6 |
+                                   prp_inv >= 0.6 ) ~ "EN",
+                              AOO <= 50 & 
+                               sp_km2 >= 0.15 &
+                                sp_tot >= 30 & 
+                                (prp_fire >= 0.6 | 
+                                  prp_overg >= 0.6 |
+                                   prp_inv >= 0.6 ) ~ "VU",
+                                TRUE ~ "LC" )) 
+  
+# write results
+write.csv(rle_b_sp_sum, file = "outputs/results_B_TH_SP.csv")
+```

@@ -1,4 +1,4 @@
-Compiling all the RLE results and determining status for each vegetation type
+### Compiling all the RLE results and determining status for each vegetation type
 
 ```{r}
 library(tidyverse)
@@ -9,11 +9,16 @@ step_sum <- read.csv("C:/Rdata/LCC_terr/outputs/step_sum.csv")
 lk_sum <- read.csv("C:/Rdata/LCC_terr/outputs/lk_sum.csv")
 coct_sum <- read.csv("C:/Rdata/LCC_terr/outputs/coct_sum.csv")
 nmb_sum <- read.csv("C:/Rdata/LCC_terr/outputs/nmb_sum.csv")
-results_A2b <- read.csv("C:/Rdata/RLE_terr/outputs/results_A2b.csv")
+results_A2b_B_ROD <- read.csv("C:/Rdata/RLE_terr/outputs/results_A2b_B_ROD.csv")
 results_A3nat <- read.csv("C:/Rdata/RLE_terr/outputs/results_A3w.csv")
 inv_rebelo <- read.csv("C:/Rdata/INV_terr/outputs/data_for_rle_rebelo_invwc.csv")
 inv_niaps <- read.csv("C:/Rdata/INV_terr/outputs/data_for_rle_niaps.csv")
+results_B_TH_SP <- read.csv("C:/Rdata/RLE_terr/outputs/results_B_TH_SP.csv")
+
+
 ```
+
+### Criterion A
 
 Compile Criterion A and include extent within AOI so that the source of the supplementary assessment can be identified
 
@@ -83,7 +88,7 @@ RLE_A3_compiled <- RLE_A3_compiled %>%
 
  
 # Add A2b general model 1990- 2022 decline
-results_A2b <- results_A2b %>%
+results_A2b <- results_A2b_B_ROD %>%
   select(prplost50_9022, A2b_9022, T_MAPCODE, ROD9022,ROD9014, ROD1822)
 
 # Join A3 and A2 results compilations
@@ -93,10 +98,11 @@ RLE_A2bA3_compiled <- RLE_A3_compiled %>%
   rename(A2b_prplost50 = prplost50_9022)
  
 # write results
-write.csv(RLE_A2bA3_compiled, file = "outputs/RLE_A2bA3_compiled.csv")                               
-                              
+write.csv(RLE_A2bA3_compiled, file = "outputs/RLE_A2bA3_compiled.csv")              
    
 ```
+
+### Criterion D
 
 Compile Criterion D and include extent so that the source of the assessment can be identified
 
@@ -131,7 +137,7 @@ RLE_D_compiled <- coct_sum %>%
   inv_niaps <- inv_niaps %>%
     select(T_MAPCODE, niaps_ext50, niaps_ext70, niaps_ext90, D3_niaps)
   inv_rebelo <- inv_rebelo %>%
-    select(T_MAPCODE, prop_rem_aoi, prop_inv, D3test)
+    select(T_MAPCODE, prop_rem_aoi, prop_inv, D3_crf_iat)
   
   RLE_D_compiled <- RLE_D3_compiled %>%
      left_join(inv_niaps, by = "T_MAPCODE") %>%
@@ -143,4 +149,93 @@ RLE_D_compiled <- coct_sum %>%
 # write results
 write.csv(RLE_D_compiled, file = "outputs/RLE_D_compiled.csv")   
   
+```
+
+Criterion B compiled
+
+```{r}
+# Add B ROD from general model 1990- 2022 decline
+RLE_B_compiled <- results_A2b_B_ROD %>%
+  select(T_MAPCODE, ROD9022_rounded, B1i_rod, B2i_rod) %>%
+  #add invasive data derived assessment of ongoing decline
+  left_join(inv_niaps, by = "T_MAPCODE") %>%
+  left_join(inv_rebelo, by = "T_MAPCODE") %>%
+  #add threatened species based assessment of ongoing decline
+  left_join(results_B_TH_SP, by = "T_MAPCODE") %>%
+  # clean up columns
+  select(T_MAPCODE, ROD9022_rounded, niaps_ext70, prop_inv, B1i_rod, B2i_rod, B1i_niaps, B2i_niaps, B1i_cfr_iat, B2i_cfr_iat, B1iii_sp, B2iii_sp) %>%
+  rename(RoD = ROD9022_rounded, prpinv_niaps = niaps_ext70, prpinv_cfr_iat = prop_inv) %>%
+  mutate(prpinv_niaps = ifelse(is.na(prpinv_niaps), 0, prpinv_niaps)) %>%
+   mutate(prpinv_cfr_iat = ifelse(is.na(prpinv_cfr_iat), 0, prpinv_cfr_iat)) %>%
+    mutate(B1i_cfr_iat = ifelse(is.na(B1i_cfr_iat), "LC", B1i_cfr_iat)) %>%
+     mutate(B2i_cfr_iat = ifelse(is.na(B2i_cfr_iat), "LC", B2i_cfr_iat)) %>%
+      mutate(B1i_niaps = ifelse(is.na(B1i_niaps), "LC", B1i_niaps)) %>%
+       mutate(B2i_niaps = ifelse(is.na(B2i_niaps), "LC", B2i_niaps)) %>%
+  # prepare to calc max from char col storing RLE status (CR EN VU LC)
+     mutate(across(B1i_rod:B2iii_sp, ~factor(.x, levels = rank_levels, ordered = TRUE))) %>%
+      mutate(across(B1i_rod:B2iii_sp, ~ as.numeric(.x))) %>%
+       mutate(B1_fin = pmax(B1i_rod, B1i_niaps, B1i_cfr_iat, B1iii_sp, na.rm = TRUE)) %>%
+        mutate(B2_fin = pmax(B2i_rod, B2i_niaps, B2i_cfr_iat, B2iii_sp, na.rm = TRUE))
+  
+# add source column       
+
+library(stringr)
+
+RLE_B_compiled <- RLE_B_compiled %>%
+  rowwise() %>%  # Ensure operations are done row-wise
+  mutate(B1_source = {
+    matching_cols <- names(select(RLE_B_compiled, starts_with("B1")))[c_across(starts_with("B1")) == B1_fin]
+    if (length(matching_cols) > 0) {
+      paste(matching_cols, collapse = ", ")
+    } else {
+      NA_character_
+    }
+  }) %>%
+   mutate(B2_source = {
+    matching_cols <- names(select(RLE_B_compiled, starts_with("B2")))[c_across(starts_with("B2")) == B2_fin]
+    if (length(matching_cols) > 0) {
+      paste(matching_cols, collapse = ", ")
+    } else {
+      NA_character_
+    }
+  }) %>%
+  ungroup()  # Ungroup to return to a normal dataframe  
+                               
+
+# write results
+write.csv(RLE_B_compiled, file = "outputs/RLE_B_compiled.csv") 
+
+```
+
+```{r}
+# final full compilations and results of RLE
+
+RLE_full_compiled <- RLE_A2bA3_compiled %>%
+  left_join(RLE_B_compiled, by = "T_MAPCODE") %>%
+  left_join(RLE_D_compiled, by = "T_MAPCODE") %>%
+  rename(A2b_fin = A2b_9022) %>%
+   mutate(A3_fin = ifelse(A3_fin == "CR", 4, ifelse(A3_fin == "EN", 3, ifelse(A3_fin == "VU", 2, 1)))) %>%
+     mutate(A2b_fin = ifelse(A2b_fin == "CR", 4, ifelse(A2b_fin == "EN", 3, ifelse(A2b_fin == "VU", 2, 1)))) %>%
+      mutate(D3_fin = ifelse(D3_fin == "CR", 4, ifelse(D3_fin == "EN", 3, ifelse(D3_fin == "VU", 2, 1)))) %>%
+       mutate(RLE = pmax(A3_fin, A2b_fin, B1_fin, B2_fin, D3_fin, na.rm = TRUE)) %>%
+  rowwise() %>%  # Ensure operations are done row-wise
+  mutate(RLE_criteria = {
+    matching_cols <- names(select(RLE_full_compiled, ends_with("fin")))[c_across(ends_with("fin")) == RLE]
+    if (length(matching_cols) > 0) {
+      paste(matching_cols, collapse = ", ")
+    } else {
+      NA_character_
+    }
+  }) %>%
+  select(T_MAPCODE, A3_fin, A2b_fin, B1_fin, B2_fin, D3_fin, RLE, RLE_criteria) %>%
+  mutate(RLE = ifelse(RLE == 4, "CR",  ifelse(RLE ==  3, "EN", ifelse(RLE ==  2, "VU", "LC")))) %>%
+  mutate(RLE = factor(RLE, levels = rank_levels, ordered = TRUE))
+    
+  # write results
+write.csv(RLE_full_compiled, file = "outputs/RLE_full_compiled.csv") 
+
+RLE_sum <- RLE_full_compiled %>%
+  group_by(RLE) %>%
+  summarise(num_types = n_distinct(T_MAPCODE), .groups = "drop" )
+   
 ```
