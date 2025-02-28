@@ -229,8 +229,18 @@ RLE_full_compiled <- RLE_A2bA3_compiled %>%
   }) %>%
   select(T_MAPCODE, A3_fin, A2b_fin, B1_fin, B2_fin, D3_fin, RLE, RLE_criteria) %>%
   mutate(RLE = ifelse(RLE == 4, "CR",  ifelse(RLE ==  3, "EN", ifelse(RLE ==  2, "VU", "LC")))) %>%
-  mutate(RLE = factor(RLE, levels = rank_levels, ordered = TRUE))
-    
+  mutate(RLE = factor(RLE, levels = rank_levels, ordered = TRUE)) %>%
+  
+  # RESULTS FOR AT49 need adjustment down to VU to match 2022 (right on threshold perhaps uplist?)
+  # RESULTS FOR SKV11 need adjustment up to EN to match 2022 (suppl vlok )
+  # RESULTS FOR FFh5 need adjustment up to CR to match 2022 (right on eoo threshold of 2000km2)
+  # RESULTS FOR FOa1 need adjustment up to VU to match 2022 (right on rod threshold)
+  # RESULTS FOR FS4 need adjustment up to CR to match 2022 (right on TS/km2 threshold)
+  # RESULTS FOR Gh14 need adjustment up to EN to match 2022 (right on rod threshold)
+  # RESULTS FOR Gm16 need adjustment up to EN to match 2022 (right on rod threshold)
+  # RESULTS FOR Gm22 need adjustment up to EN to match 2022 (right on rod threshold)
+  # RESULTS FOR Gs12 need adjustment up to EN to match 2022 (right on rod threshold)
+  
   # write results
 write.csv(RLE_full_compiled, file = "outputs/RLE_full_compiled.csv") 
 
