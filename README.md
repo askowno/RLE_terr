@@ -10,6 +10,20 @@ February 2025
 
 *This Repository contains a series of workflows that together result in the 2025 Red List of Ecosystems for Terrestrial Ecosystems of South Africa.*
 
+``` mermaid
+flowchart LR; 
+A[LCC_terr/LCC_change_7class_veg24.qmd] --> B[RLE_terr/RLE2024_A3.qmd] --> C(A3) --> D(RLE_terr/RLE_compilation.qmd) --> E[Terrestrial RLE 2025 results]; 
+A --> F[RLE_terr/RLE2024_A2b.qmb] --> G[A2b] --> D; 
+F--> H[B1i and B2i] --> D ;
+I[RLE_terr/RLE_B_species.qmd] --> J[B1iii and B2iii] --> D ;
+K[RLE_terr/CoCT_LC_Condition.qmd] --> C; 
+K --> N ;
+L[LL_terr/WC_KZN_MPL_LC.qmd] --> C; 
+M[LCC_terr/STEP_Condition.qmd] --> N[D3]; 
+O[LCC_terr/LittleKaroo_deg.qmd] --> N; 
+O[LCC_terr/NMB_Condition.qmd] --> N; 
+P[Expert assessments - ELK, RV, CB] --> E; 
+```
 
 1.  Calculate Criterion A3 national land cover data [RLE2024_A3.qmd](RLE2024_A3.qmd);
 
