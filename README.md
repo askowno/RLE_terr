@@ -16,7 +16,7 @@ A[LCC_terr/LCC_change_7class_veg24.qmd] --> B[RLE_terr/RLE2024_A3.qmd] --> C(A3)
 A --> F[RLE_terr/RLE2024_A2b.qmb] --> G[A2b] --> D; 
 F--> H[B1i and B2i] --> D ;
 I[RLE_terr/RLE_B_species.qmd] --> J[B1iii and B2iii] --> D ;
-K[RLE_terr/CoCT_LC_Condition.qmd] --> C; 
+K[LCC_terr/CoCT_LC_Condition.qmd] --> C; 
 K --> N ;
 L[LL_terr/WC_KZN_MPL_LC.qmd] --> C; 
 M[LCC_terr/STEP_Condition.qmd] --> N[D3]; 
