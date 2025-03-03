@@ -1,4 +1,4 @@
-## Tools for undertaking the Red List of Ecosystems (RLE) Assessment for the Terrestrial Realm
+## Workflows for undertaking the terrestrial Ded List of Ecosystems (RLE) assessment
 
 ### **National Biodiversity Assessment - South Africa**
 
@@ -8,7 +8,7 @@ February 2025
 
 #### Summary
 
-*This Repository contains a series of workflows that together result in the 2025 Red List of Ecosystems for Terrestrial Ecosystems of South Africa.*
+*This Repository contains a series of workflows that together result in the 2025 Red List of Ecosystems for Terrestrial Ecosystems of South Africa. The terrestrial ecosystem types assessed are represented by the terrestrial vegetation units contained in the National Vegetation Map 2024 (released by SANBI in January 2025).*
 
 ``` mermaid
 flowchart LR; 
