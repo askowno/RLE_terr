@@ -1,4 +1,4 @@
-## Tools for undertaking the Red List of Ecosystems Assessment (terrestrial)
+## Tools for undertaking the Red List of Ecosystems (RLE) Assessment for the Terrestrial Realm
 
 ### **National Biodiversity Assessment - South Africa**
 
@@ -8,7 +8,8 @@ February 2025
 
 #### Summary
 
-*This Repository contains the following workflows that together result in the 2025 Red List of Ecosystems for Terrestrial Ecosystems of South Africa.*
+*This Repository contains a series of workflows that together result in the 2025 Red List of Ecosystems for Terrestrial Ecosystems of South Africa.*
+
 
 1.  Calculate Criterion A3 national land cover data [RLE2024_A3.qmd](RLE2024_A3.qmd);
 
