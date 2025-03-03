@@ -80,6 +80,6 @@ The results from the supplementary assessments listed above were ingested and co
 
 -   Nelson Mandel Bay Metro D3 results ([askowno/LCC_terr/outputs/nmb_sum.csv](askowno/LCC_terr/outputs/nmb_sum.csv))
 
-#### RLE status for each criterion calculated 
+#### RLE status for each criterion calculated
 
 Once compiled into a single table the highest risk category for each ecosystem was selected, and each contributing criterion was captured. Key metrics, required in the reporting of RLE was captured (e.g. extent remaining, EOO).
