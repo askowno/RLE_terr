@@ -1,4 +1,4 @@
-## Workflows for undertaking the terrestrial Ded List of Ecosystems (RLE) assessment
+## Workflows for undertaking the terrestrial Red List of Ecosystems (RLE) assessment
 
 ### **National Biodiversity Assessment - South Africa**
 
@@ -31,7 +31,7 @@ P[Expert assessments - ELK, RV, CB] --> E;
 
 3.  Calculate Criterion B1iii & B2iii using EOO and AOO plus a model of ongoing decline based on the Red List of Threatened Species database (SANBI 2024). At least 30 threatened species, with a density of at least 0.15 per km2, and 60% of threatened species threatened by either disrupted fire regimes, over-use by livestock or alien plant invasions [RLE2024_B_species.qmd](RLE2024_B_species.qmd);
 
-4.  Collate all assessments for all criteria [RLE_compilation.qmd](RLE_compilation.qmd) using the three assessments above plus these supplementary assessments:
+4.  Collate all assessments for all criteria [RLE_compilation.qmd](RLE_compilation.qmd) using the three assessments above plus these **supplementary** assessments:
 
 -   Criterion A3 assessments using Western Cape (Cape Nature), KwaZulu-Natal (EKZN), Mpumalanga land cover data (MPTA). Workflow in the LCC_terr repo [WC_KZN_MPL_LC.qmd](WC_KZN_MPL_LC.qmd)
 
