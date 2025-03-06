@@ -192,7 +192,8 @@ rle_A2b_B_rod_sum <- rle_terr_A2b %>%
   mutate(B2i_rod = case_when(AOO <= 2 & ROD9022_rounded >= 0.4 ~ "CR", 
                                   AOO <= 20 & ROD9022_rounded >= 0.4 ~ "EN", 
                                   AOO <= 50 & ROD9022_rounded >= 0.4 ~ "VU", 
-                                  TRUE ~ "LC"))  
+                                  TRUE ~ "LC"))  %>%
+  mutate(B_source = "B1i_rod, B2i_rod")
 
 # write results
 write.csv(rle_A2b_B_rod_sum, file = "outputs/results_A2b_B_ROD.csv")

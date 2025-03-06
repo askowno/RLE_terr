@@ -49,7 +49,6 @@ RLE_A3_compiled <- results_A3nat %>%
   relocate(prplost_nat, .before = prplost_alt)
   
 
-
 # Convert A3_* columns to ordered factors
 RLE_A3_compiled <- RLE_A3_compiled %>%
   rowwise() %>%
@@ -89,12 +88,14 @@ RLE_A3_compiled <- RLE_A3_compiled %>%
  
 # Add A2b general model 1990- 2022 decline
 results_A2b <- results_A2b_B_ROD %>%
-  select(prplost50_9022, A2b_9022, T_MAPCODE, ROD9022,ROD9014, ROD1822)
+  select(prplost50_9022, A2b_9022, T_MAPCODE) %>%
+  mutate(A2b_source =  "A2b") %>%
+  rename(A2b_fin = A2b_9022)
 
 # Join A3 and A2 results compilations
 RLE_A2bA3_compiled <- RLE_A3_compiled %>%
   left_join(results_A2b, by =  "T_MAPCODE") %>%
-  select(T_MAPCODE, A3_fin, A3_source, A3_prplost, A2b_9022, prplost50_9022, ROD9022, ROD9014, ROD1822) %>%
+  select(T_MAPCODE, A3_fin, A3_source, A3_prplost, A2b_fin, A2b_source, prplost50_9022) %>%
   rename(A2b_prplost50 = prplost50_9022)
  
 # write results
@@ -135,16 +136,16 @@ RLE_D_compiled <- coct_sum %>%
   
   # Add invasives data
   inv_niaps <- inv_niaps %>%
-    select(T_MAPCODE, niaps_ext50, niaps_ext70, niaps_ext90, D3_niaps)
+    select(T_MAPCODE, niaps_ext50, niaps_ext70, niaps_ext90, D3_niaps, B1i_niaps, B2i_niaps)
   inv_rebelo <- inv_rebelo %>%
-    select(T_MAPCODE, prop_rem_aoi, prop_inv, D3_crf_iat)
+    select(T_MAPCODE, prop_rem_aoi, prop_inv, D3_cfr_iat, B1i_cfr_iat, B2i_cfr_iat)
   
-  RLE_D_compiled <- RLE_D3_compiled %>%
+  RLE_D_compiled <- RLE_D_compiled %>%
      left_join(inv_niaps, by = "T_MAPCODE") %>%
      left_join(inv_rebelo, by = "T_MAPCODE") %>%
-     rename(ext_cfr_iat = prop_rem_aoi, D3_cfr_iat = D3test, prpdeg_cfr_iat =      prop_inv, prpdeg50_niaps = niaps_ext50,             prpdeg70_niaps = niaps_ext70, prpdeg90_niaps = niaps_ext90)
+     rename(ext_cfr_iat = prop_rem_aoi, prpdeg_cfr_iat =      prop_inv, prpdeg50_niaps = niaps_ext50,             prpdeg70_niaps = niaps_ext70, prpdeg90_niaps = niaps_ext90) %>%
+    select(-B1i_niaps, -B1i_cfr_iat, -B2i_niaps, -B2i_cfr_iat) 
   
-
 
 # write results
 write.csv(RLE_D_compiled, file = "outputs/RLE_D_compiled.csv")   
@@ -163,8 +164,9 @@ RLE_B_compiled <- results_A2b_B_ROD %>%
   #add threatened species based assessment of ongoing decline
   left_join(results_B_TH_SP, by = "T_MAPCODE") %>%
   # clean up columns
-  select(T_MAPCODE, ROD9022_rounded, niaps_ext70, prop_inv, B1i_rod, B2i_rod, B1i_niaps, B2i_niaps, B1i_cfr_iat, B2i_cfr_iat, B1iii_sp, B2iii_sp) %>%
-  rename(RoD = ROD9022_rounded, prpinv_niaps = niaps_ext70, prpinv_cfr_iat = prop_inv) %>%
+  select(T_MAPCODE, ROD9022_rounded, niaps_ext70, prop_inv, prop_rem_aoi, B1i_rod, B2i_rod, B1i_niaps, B2i_niaps, B1i_cfr_iat, B2i_cfr_iat, B1iii_sp, B2iii_sp) %>%
+  rename(RoD = ROD9022_rounded, prpinv_niaps = niaps_ext70, prpinv_cfr_iat = prop_inv, aoi_cfr = prop_rem_aoi) %>%
+  mutate(aoi_cfr = ifelse(is.na(aoi_cfr), 0, aoi_cfr)) %>% 
   mutate(prpinv_niaps = ifelse(is.na(prpinv_niaps), 0, prpinv_niaps)) %>%
    mutate(prpinv_cfr_iat = ifelse(is.na(prpinv_cfr_iat), 0, prpinv_cfr_iat)) %>%
     mutate(B1i_cfr_iat = ifelse(is.na(B1i_cfr_iat), "LC", B1i_cfr_iat)) %>%
@@ -174,8 +176,8 @@ RLE_B_compiled <- results_A2b_B_ROD %>%
   # prepare to calc max from char col storing RLE status (CR EN VU LC)
      mutate(across(B1i_rod:B2iii_sp, ~factor(.x, levels = rank_levels, ordered = TRUE))) %>%
       mutate(across(B1i_rod:B2iii_sp, ~ as.numeric(.x))) %>%
-       mutate(B1_fin = pmax(B1i_rod, B1i_niaps, B1i_cfr_iat, B1iii_sp, na.rm = TRUE)) %>%
-        mutate(B2_fin = pmax(B2i_rod, B2i_niaps, B2i_cfr_iat, B2iii_sp, na.rm = TRUE))
+       mutate(xB1_fin = pmax(B1i_rod, B1i_niaps, B1i_cfr_iat, B1iii_sp, na.rm = TRUE)) %>%
+        mutate(xB2_fin = pmax(B2i_rod, B2i_niaps, B2i_cfr_iat, B2iii_sp, na.rm = TRUE))
   
 # add source column       
 
@@ -184,7 +186,7 @@ library(stringr)
 RLE_B_compiled <- RLE_B_compiled %>%
   rowwise() %>%  # Ensure operations are done row-wise
   mutate(B1_source = {
-    matching_cols <- names(select(RLE_B_compiled, starts_with("B1")))[c_across(starts_with("B1")) == B1_fin]
+    matching_cols <- names(select(RLE_B_compiled, starts_with("B1")))[c_across(starts_with("B1")) == xB1_fin]
     if (length(matching_cols) > 0) {
       paste(matching_cols, collapse = ", ")
     } else {
@@ -192,15 +194,17 @@ RLE_B_compiled <- RLE_B_compiled %>%
     }
   }) %>%
    mutate(B2_source = {
-    matching_cols <- names(select(RLE_B_compiled, starts_with("B2")))[c_across(starts_with("B2")) == B2_fin]
+    matching_cols <- names(select(RLE_B_compiled, starts_with("B2")))[c_across(starts_with("B2")) == xB2_fin]
     if (length(matching_cols) > 0) {
       paste(matching_cols, collapse = ", ")
     } else {
       NA_character_
     }
   }) %>%
-  ungroup()  # Ungroup to return to a normal dataframe  
-                               
+  ungroup() %>% # Ungroup to return to a normal dataframe  
+  rename(B1_fin = xB1_fin, B2_fin = xB2_fin)  %>%
+  mutate(B1_source = ifelse(aoi_cfr == 0, str_remove(B1_source, ", B1i_cfr_iat"), B1_source)) %>%
+   mutate(B2_source = ifelse(aoi_cfr == 0, str_remove(B2_source, ", B2i_cfr_iat"), B2_source))
 
 # write results
 write.csv(RLE_B_compiled, file = "outputs/RLE_B_compiled.csv") 
@@ -213,23 +217,28 @@ write.csv(RLE_B_compiled, file = "outputs/RLE_B_compiled.csv")
 RLE_full_compiled <- RLE_A2bA3_compiled %>%
   left_join(RLE_B_compiled, by = "T_MAPCODE") %>%
   left_join(RLE_D_compiled, by = "T_MAPCODE") %>%
-  rename(A2b_fin = A2b_9022) %>%
-   mutate(A3_fin = ifelse(A3_fin == "CR", 4, ifelse(A3_fin == "EN", 3, ifelse(A3_fin == "VU", 2, 1)))) %>%
+  rename(D3_niaps_fin = D3_niaps, D3_cfr_iat_fin = D3_cfr_iat) %>%
+     mutate(A3_fin = ifelse(A3_fin == "CR", 4, ifelse(A3_fin == "EN", 3, ifelse(A3_fin == "VU", 2, 1)))) %>%
      mutate(A2b_fin = ifelse(A2b_fin == "CR", 4, ifelse(A2b_fin == "EN", 3, ifelse(A2b_fin == "VU", 2, 1)))) %>%
       mutate(D3_fin = ifelse(D3_fin == "CR", 4, ifelse(D3_fin == "EN", 3, ifelse(D3_fin == "VU", 2, 1)))) %>%
-       mutate(RLE = pmax(A3_fin, A2b_fin, B1_fin, B2_fin, D3_fin, na.rm = TRUE)) %>%
-  rowwise() %>%  # Ensure operations are done row-wise
-  mutate(RLE_criteria = {
-    matching_cols <- names(select(RLE_full_compiled, ends_with("fin")))[c_across(ends_with("fin")) == RLE]
-    if (length(matching_cols) > 0) {
-      paste(matching_cols, collapse = ", ")
-    } else {
-      NA_character_
-    }
-  }) %>%
-  select(T_MAPCODE, A3_fin, A2b_fin, B1_fin, B2_fin, D3_fin, RLE, RLE_criteria) %>%
+      mutate(D3_niaps_fin = ifelse(D3_niaps_fin == "CR", 4, ifelse(D3_niaps_fin == "EN", 3, ifelse(D3_niaps_fin == "VU", 2, 1)))) %>%
+      mutate(D3_cfr_iat_fin = ifelse(D3_cfr_iat_fin == "CR", 4, ifelse(D3_cfr_iat_fin == "EN", 3, ifelse(D3_cfr_iat_fin == "VU", 2, 1)))) %>%
+       mutate(RLE = pmax(A3_fin, A2b_fin, B1_fin, B2_fin, D3_fin, D3_niaps_fin, D3_cfr_iat_fin, na.rm = TRUE)) %>%
+  mutate(D3_cfr_iat_fin = ifelse(is.na(D3_cfr_iat_fin), 0, D3_cfr_iat_fin)) %>%
+  mutate(prpdeg_cfr_iat = ifelse(is.na(prpdeg_cfr_iat), 0, prpdeg_cfr_iat)) %>%
+  # clean up cols
+  select(-prpdeg_cfr_iat, -prpdeg50_niaps, -prpdeg70_niaps, -prpdeg90_niaps, -ext_cfr_iat) %>%
+  # alternative way to add trigger column
+  mutate(t1 = ifelse(RLE >1 & A3_fin == RLE, A3_source, ""),
+         t2 =  ifelse(RLE >1 & A2b_fin == RLE, A2b_source, ""),
+         t3 =  ifelse(RLE >1 & B1_fin == RLE, B1_source, ""),
+         t4 =  ifelse(RLE >1 & B2_fin == RLE, B2_source, ""),
+         t5 =  ifelse(RLE >1 & D3_fin == RLE, D3_source, "")) %>%
+  mutate(Criteria_triggered = paste(na.omit(c(t1, t2, t3, t4, t5))[nzchar(na.omit(c(t1, t2, t3, t4, t5)))], collapse = ", ")) %>%
+     mutate(Criteria_used = str_c(A3_source, A2b_source, B1_source, B2_source, D3_source, sep = ", ")) %>%
+  select(T_MAPCODE, A3_fin, A3_prplost, A2b_fin, A2b_prplost50, B1_fin, B2_fin, RoD, D3_fin, D3_prpdeg, prpinv_niaps, prpinv_cfr_iat, RLE, Criteria_triggered, Criteria_used) %>%
   mutate(RLE = ifelse(RLE == 4, "CR",  ifelse(RLE ==  3, "EN", ifelse(RLE ==  2, "VU", "LC")))) %>%
-  mutate(RLE = factor(RLE, levels = rank_levels, ordered = TRUE)) %>%
+  mutate(RLE = factor(RLE, levels = rank_levels, ordered = TRUE))
   
   # RESULTS FOR AT49 need adjustment down to VU to match 2022 (right on threshold perhaps uplist?)
   # RESULTS FOR SKV11 need adjustment up to EN to match 2022 (suppl vlok )
