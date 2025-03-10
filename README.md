@@ -37,9 +37,9 @@ P[Expert assessments - ELK, RV, CB] --> E;
 
 -   Criterion A3, B1, B2, and D3 assessments using City of Cape Town BioNet data on land cover and ecosystem condition (CoCT, 2024) . Workflow in the LCC_terr repo [CoCT_LC_Condition.qmd](CoCT_LC_Condition.qmd)
 
--   Criterion B1, B2, D3 assessments using the National Invasive Alien Plant Survey data (Kotze et al., 2024). Workflow in the INV_terr repo [Invasives_niaps.qmd](Invasives_niaps.qmd)
+-   Criterion B1, B2, D3 assessments using the National Invasive Alien Plant Survey data ([Kotze et al., 2025](https://doi.org/10.1007/s10530-025-03558-9)). Workflow in the INV_terr repo [Invasives_niaps.qmd](Invasives_niaps.qmd)
 
--   Criterion B1, B2, D3 assessments using CFR Invasive Alien Tree Survey data (Rebelo et al. 2024). Workflow in the INV_terr repo [Invasives_rebelo_wc.qmd](Invasives_rebelo_wc.qmd)
+-   Criterion B1, B2, D3 assessments using CFR Invasive Alien Tree Survey data ([Rebelo et al. 2024](https://figshare.com/s/4ff827112e4d7edf6293)). Workflow in the INV_terr repo [Invasives_rebelo_wc.qmd](Invasives_rebelo_wc.qmd)
 
 -   Criterion D3 assessments using STEP ecosystem condition data (Lloyd et al., 2022). Workflow in the LCC_terr repo [STEP_Condition.qmd](STEP_Condition.qmd)
 
