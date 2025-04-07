@@ -14,13 +14,13 @@ execute:
 bibliography: references.bib
 ---
 
-## Red List of Ecosystems (terrestrial) workflows for Criterion A2b
+## Red List of Ecosystems (terrestrial) workflows for Criterion A2b and B1i/2i
 
 ### Approach
 
 Undertake analyses usually done in excel in R - to improve reproducibility and transparency of workflows for the Red List of Ecosystems.
 
-Import the results of a spatial analysis (R terra) that combined land cover data for 1990, 2014, 2018, 2020 and 2022 with national vegetation map data (2024 version). The cross tabulation (using R, Terra) of terrestrial ecosystem types (vegetation) data with land cover change data for South Africa is described in workflow "LC_change_7class_veg24.qmd". This allows for the calculation of the natural remaining extent for each ecosystem type at each time point across full extent of the ecosystem. The rate of habitat loss over the last 32 years can then be calculated allowing for assessment of each type using Criterion A2b ([@keith2013]; [@skowno2021c]).
+Import the results of a spatial analysis (R terra) that combined land cover data for 1990, 2014, 2018, 2020 and 2022 with national vegetation map data (2024 version). The cross tabulation (using R, Terra) of terrestrial ecosystem types (vegetation) data with land cover change data for South Africa is described in workflow "LC_change_7class_veg24.qmd". This allows for the calculation of the natural remaining extent for each ecosystem type at each time point across full extent of the ecosystem. The rate of habitat loss over the last 32 years can then be calculated allowing for assessment of each type using Criterion A2b ([@keith2013]; [@skowno2021c]). The Rate of decline analysis also informs Criterion B of the RLE which requires evidence of ongoing decline in ecosystem that meet the restricted range thresholds.
 
 ### Load required packages
 

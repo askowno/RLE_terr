@@ -18,11 +18,13 @@ F--> H[B1i and B2i] --> D ;
 I[RLE_terr/RLE_B_species.qmd] --> J[B1iii and B2iii] --> D ;
 K[LCC_terr/CoCT_LC_Condition.qmd] --> C; 
 K --> N ;
-L[LL_terr/WC_KZN_MPL_LC.qmd] --> C; 
+L[LCC_terr/WC_KZN_MPL_LC.qmd] --> C; 
 M[LCC_terr/STEP_Condition.qmd] --> N[D3]; 
 O[LCC_terr/LittleKaroo_deg.qmd] --> N; 
 O[LCC_terr/NMB_Condition.qmd] --> N; 
 P[Expert assessments - ELK, RV, CB] --> E; 
+Q[INV_terr/Invasives_combined.qmd] --> H;
+Q --> N;
 ```
 
 1.  Calculate Criterion A3 using the national land cover data 7 class version (SANBI 2024) [RLE2024_A3.qmd](RLE2024_A3.qmd);
