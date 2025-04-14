@@ -1,3 +1,7 @@
+---
+bibliography: references.bib
+---
+
 ## Workflows for undertaking the terrestrial Red List of Ecosystems (RLE) assessment
 
 ### **National Biodiversity Assessment - South Africa**
@@ -39,9 +43,7 @@ Q --> N;
 
 -   Criterion A3, B1, B2, and D3 assessments using City of Cape Town BioNet data on land cover and ecosystem condition (CoCT, 2024) . Workflow in the LCC_terr repo [CoCT_LC_Condition.qmd](CoCT_LC_Condition.qmd)
 
--   Criterion B1, B2, D3 assessments using the National Invasive Alien Plant Survey data ([Kotze et al., 2025](https://doi.org/10.1007/s10530-025-03558-9)). Workflow in the INV_terr repo [Invasives_niaps.qmd](Invasives_niaps.qmd)
-
--   Criterion B1, B2, D3 assessments using CFR Invasive Alien Tree Survey data ([Rebelo et al. 2024](https://figshare.com/s/4ff827112e4d7edf6293)). Workflow in the INV_terr repo [Invasives_rebelo_wc.qmd](Invasives_rebelo_wc.qmd)
+-   Criterion B1, B2, D3 assessments using a combined invasive alien plant layer that includes: a) the National Invasive Alien Plant Survey data ([Kotze et al., 2025](https://doi.org/10.1007/s10530-025-03558-9)), b) the CFR Invasive Alien Tree Survey data ([Rebelo et al. 2024](https://doi.org/10.25413/SUN.27377211)), c) the MAPWAPS IAP data ([Skosana et al., 2024a](https://doi.org/10.25413/SUN.25050368), [Skosana et al., 2024b](https://doi.org/10.25413/SUN.25050401), [Cogill et al., 2024a](https://doi.org/10.25413/SUN.25066151), [Cogill et al., 2024b](https://doi.org/10.25413/SUN.25050314)). Workflow in the INV_terr repo [Invasives_combined.qmd](INV_terr/Invasives_combined.qmd)
 
 -   Criterion D3 assessments using STEP ecosystem condition data (Lloyd et al., 2022). Workflow in the LCC_terr repo [STEP_Condition.qmd](STEP_Condition.qmd)
 
@@ -51,7 +53,7 @@ Q --> N;
 
 #### Calculating metrics of ecosystem extent and assessing RLE Criteria A3
 
-R tidy script ([RLE2024_A3.qmd](RLE2024_A3qmd)) in Quarto format showing how land cover change metrics [(LCC_terr/outputs/lc7_rall.csv)](askowno/LCC_terr/ouputs/lc7_rall.csv) from the Land Cover Change workflow ([LCC_terr/LC_change_7class_veg24.qmd](askowno/LCC_terr/LC_change_7class_veg24.qmd)) were ingested and summarised, and then used in assessment of RLE Criterion A3.
+R tidy script ([RLE2024_A3.qmd](RLE2024_A3qmd)) in Quarto format shows how land cover change metrics [(LCC_terr/outputs/lc7_rall.csv)](askowno/LCC_terr/ouputs/lc7_rall.csv) from the Land Cover Change workflow ([LCC_terr/LC_change_7class_veg24.qmd](askowno/LCC_terr/LC_change_7class_veg24.qmd)) were ingested and summarised, and then used in assessment of RLE Criterion A3.
 
 For Criterion A3 the key metric is the ecosystem extent remaining in natural condition at each time point expressed as a proportion of the historical / potential extent of the ecosystem type (e.g. extent2022/ext1750). This is used to assess Criterion A3 for each ecosystem type. The results are captured in wide ([outputs/results_A3w.csv](outputs/results_A3w.csv)) and long ([outputs/results_A3.csv](outputs/results_A3.csv)) formats.
 
@@ -59,7 +61,7 @@ For Criterion A3 the key metric is the ecosystem extent remaining in natural con
 
 R tidy script ([RLE2024_A2b.qmd](RLE2024_A2b.qmd)) in Quarto format showing how land cover change metrics [(LCC_terr/outputs/lc7_rall.csv)](askowno/LCC_terr/ouputs/lc7_rall.csv) from the Land Cover Change workflow ([LCC_terr](askowno/LCC_terr/LC_change_7class_veg24.qmd)) were ingested and summarised, and then used in assessment of RLE Criterion A2b.
 
-For Criterion A2b the key metrics relate to the rate of habitat loss (decline in ecosystem extent), and the use of these to project ecosystem extent forward to 2040, and then assess the proportion of 1990 extent that will be lost over a 50 year period to 2040. This information is used to assess Criterion A2b for each ecosystem type. The results are captured in wide ([outputs/results_A2b.csv](outputs/results_A2b.csv)) format.
+For Criterion A2b the key metrics relate to the rate of habitat loss (decline in ecosystem extent), and the use of these to project ecosystem extent forward to 2040, and then assess the proportion of 1990 extent that will be lost over a 50 year period to 2040. This information is used to assess Criterion A2b for each ecosystem type. The results for A2 and B1irod and B2irod are captured in wide ([outputs/results_A2b.csv](outputs/results_A2b.csv)) format.
 
 1.  Compute the absolute rate of decline in ecosystem extent (ARD) over the period 1990 to 2022, the period 1990-2014, 2014-2022 and 2018-2022 (to provide recent trend).
 2.  This ARD can be used to estimate ecosystem extent in 2040 to allow for computation of Criterion A2b (recent and ongoing declines). The simplest approach is to calculate the rate of decline in natural extent per year and then multiply by 50 to get the projected extent in 2040 (i.e. ext2040 = ARD9022 / 32 \* 50 ).
@@ -80,8 +82,10 @@ The results from the supplementary assessments listed above were ingested and co
 
 -   Subtropical Ecosystem Project (STEP) D3 results ([askowno/LCC_terr/outputs/step_sum.csv](askowno/LCC_terr/outputs/step_sum.csv))
 
--   Nelson Mandel Bay Metro D3 results ([askowno/LCC_terr/outputs/nmb_sum.csv](askowno/LCC_terr/outputs/nmb_sum.csv))
+-   Nelson Mandela Bay Metro (NMB) D3 results ([askowno/LCC_terr/outputs/nmb_sum.csv](askowno/LCC_terr/outputs/nmb_sum.csv))
+
+-   Combined invasive alien plant B1i, B2i and D3 results ([askowno/INV_terr/outputs/data_for_rle_inv_max2.csv](askowno/INV_terr/outputs/data_for_rle_inv_max2.csv))
 
 #### RLE overall, and status for each criterion calculated
 
-Once all the results were compiled into a single table ([RLE_compilation.qmd](RLE_compilation.qmd)) the highest risk category for each ecosystem was selected, and each contributing criterion was captured. Key metrics, required in the reporting of RLE were also captured (e.g. extent remaining, EOO) ([outputs/RLE_full_compiled.csv](outputs/RLE_full_compiled.csv)).
+Once all the results were compiled into a single table ([RLE_compilation.qmd](RLE_compilation.qmd)) the highest risk category for each ecosystem was selected, and each contributing criterion was captured. Key metrics, required in the reporting of RLE were also captured (e.g. extent remaining, EOO, AOO, percentage invaded) ([outputs/RLE_full_compiled.csv](outputs/RLE_full_compiled.csv)).
