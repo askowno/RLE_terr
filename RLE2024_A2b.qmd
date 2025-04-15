@@ -133,46 +133,46 @@ rateloss_pred <- rateloss %>%
   inner_join(predictions_lm, by = "T_MAPCODE") %>%
   inner_join(predictions_poly, by = "T_MAPCODE") %>%
   inner_join(predictions_spline, by = "T_MAPCODE") %>%
-  mutate(prplost50_9022 = (`1990` - nat_2040_ard9022)/ `1990`, 
-         prplost50_9014 = (`1990` - nat_2040_ard9014)/ `1990`,
-         prplost50_1422 = (`1990` - nat_2040_ard1422)/ `1990`,
-          prplost50_1822 = (`1990` - nat_2040_ard1822)/ `1990`,
-         prplost50_lm   = (`1990` - pred2040lm)/ `1990`,
-         prplost50_poly = (`1990` - pred2040poly)/ `1990`,
-         prplost50_spline = (`1990` - pred2040spline)/ `1990`)
+  mutate(prclost50_9022 = 100*round((`1990` - nat_2040_ard9022)/ `1990`,2), 
+         prclost50_9014 = 100*round((`1990` - nat_2040_ard9014)/ `1990`,2),
+         prclost50_1422 = 100*round((`1990` - nat_2040_ard1422)/ `1990`,2),
+          prclost50_1822 = 100*round((`1990` - nat_2040_ard1822)/ `1990`,2),
+         prclost50_lm   = 100*round((`1990` - pred2040lm)/ `1990`,2),
+         prclost50_poly = 100*round((`1990` - pred2040poly)/ `1990`,2),
+         prclost50_spline = 100*round((`1990` - pred2040spline)/ `1990`,2))
 ```
 
 ```{r}
-#Compute metrics required for RLE (Absolute Rate of Decline (km2/year), Rate of Decline (%/year), Proportion Lost over 50years, Projected extent in 2040). And then assess Criterion A3 and A2b
+#Compute metrics required for RLE (Absolute Rate of Decline (km2/year), Rate of Decline (%/year), Percentage Lost over 50years, Projected extent in 2040). And then assess Criterion A2b
 
 rle_terr_A2b <- rateloss_pred %>%
-  mutate(A2b_9022 = case_when(prplost50_9022 >= 0.8 ~ "CR",
-                   prplost50_9022 >= 0.5 ~ "EN",
-                   prplost50_9022 >= 0.3 ~ "VU",
+  mutate(A2b_9022 = case_when(prclost50_9022 >= 80 ~ "CR",
+                   prclost50_9022 >= 50 ~ "EN",
+                   prclost50_9022 >= 30 ~ "VU",
                   TRUE ~ "LC"), 
-         A2b_9014 = case_when(prplost50_9014 >= 0.8 ~ "CR",
-                   prplost50_9014 >= 0.5 ~ "EN",
-                   prplost50_9014 >= 0.3 ~ "VU",
+         A2b_9014 = case_when(prclost50_9014 >= 80 ~ "CR",
+                   prclost50_9014 >= 50 ~ "EN",
+                   prclost50_9014 >= 30 ~ "VU",
                   TRUE ~ "LC"),
-         A2b_1422 = case_when(prplost50_1422 >= 0.8 ~ "CR",
-                   prplost50_1422 >= 0.5 ~ "EN",
-                   prplost50_1422 >= 0.3 ~ "VU",
+         A2b_1422 = case_when(prclost50_1422 >= 80 ~ "CR",
+                   prclost50_1422 >= 50 ~ "EN",
+                   prclost50_1422 >= 30 ~ "VU",
                   TRUE ~ "LC"), 
-         A2b_1822 = case_when(prplost50_1822 >= 0.8 ~ "CR",
-                   prplost50_1822 >= 0.5 ~ "EN",
-                   prplost50_1822 >= 0.3 ~ "VU",
+         A2b_1822 = case_when(prclost50_1822 >= 80 ~ "CR",
+                   prclost50_1822 >= 50 ~ "EN",
+                   prclost50_1822 >= 30 ~ "VU",
                   TRUE ~ "LC"), 
-          A2b_lm = case_when(prplost50_lm >= 0.8 ~ "CR",
-                   prplost50_lm >= 0.5 ~ "EN",
-                   prplost50_lm >= 0.3 ~ "VU",
+          A2b_lm = case_when(prclost50_lm >= 80 ~ "CR",
+                   prclost50_lm >= 50 ~ "EN",
+                   prclost50_lm >= 30 ~ "VU",
                   TRUE ~ "LC"), 
-         A2b_poly = case_when(prplost50_poly >= 0.8 ~ "CR",
-                   prplost50_poly >= 0.5 ~ "EN",
-                   prplost50_poly >= 0.3 ~ "VU",
+         A2b_poly = case_when(prclost50_poly >= 80 ~ "CR",
+                   prclost50_poly >= 50 ~ "EN",
+                   prclost50_poly >= 30 ~ "VU",
                   TRUE ~ "LC"), 
-          A2b_spline = case_when(prplost50_spline >= 0.8 ~ "CR",
-                   prplost50_spline >= 0.5 ~ "EN",
-                   prplost50_spline >= 0.3 ~ "VU",
+          A2b_spline = case_when(prclost50_spline >= 80 ~ "CR",
+                   prclost50_spline >= 50 ~ "EN",
+                   prclost50_spline >= 30 ~ "VU",
                   TRUE ~ "LC"))    
 
 # write results
@@ -180,7 +180,7 @@ write.csv(rle_terr_A2b, file = "outputs/results_A2b.csv")
 ```
 
 ```{r}
-# use the ROD as a qualifier for Criterion B assessments - the logic is that rapid ongoing rates of habitat loss  are sufficient evidence of "ongoing decline" for range restricted ecosystems types. 
+# use the ROD as a qualifier for Criterion B assessments - the logic is that rapid ongoing rates of habitat loss  are sufficient evidence of "ongoing decline" for range restricted ecosystems types. 0.4 % loss per year mean 100ha will reduce to 70ha in 10 years a 30% loss, over 50 years it will be all lost. 
 
 rle_A2b_B_rod_sum <- rle_terr_A2b %>%
  left_join(eoo, "T_MAPCODE") %>%

@@ -10,7 +10,7 @@ lk_sum <- read.csv("C:/Rdata/LCC_terr/outputs/lk_sum.csv")
 coct_sum <- read.csv("C:/Rdata/LCC_terr/outputs/coct_sum.csv")
 nmb_sum <- read.csv("C:/Rdata/LCC_terr/outputs/nmb_sum.csv")
 results_A2b_B_ROD <- read.csv("C:/Rdata/RLE_terr/outputs/results_A2b_B_ROD.csv")
-results_A3nat <- read.csv("C:/Rdata/RLE_terr/outputs/results_A3w.csv")
+results_A3nat <- read.csv("C:/Rdata/RLE_terr/outputs/results_A3.csv")
 inv_max <- read.csv("C:/Rdata/INV_terr/outputs/data_for_rle_inv_max2.csv")
 results_B_TH_SP <- read.csv("C:/Rdata/RLE_terr/outputs/results_B_TH_SP.csv")
 
@@ -30,72 +30,64 @@ rank_levels <- c("LC", "VU", "EN", "CR")
 # Join summary tables from each supplementary assessment
 RLE_A3_compiled <- results_A3nat %>%
   left_join(alt_sum, by = "T_MAPCODE") %>%
-  rename(A3_alt = A3) %>%
-  rename(A3_nat = A3_2022) %>%
-  left_join(nmb_sum, by = "T_MAPCODE") %>%
-  rename(A3_nmb = A3) %>%
-  left_join(coct_sum, by = "T_MAPCODE") %>%
-  rename(A3_coct = A3) %>%
-  select(T_MAPCODE, prop_nat2022, prplost.x, prplost.y, prplost, A3_nat, A3_alt, A3_nmb,  A3_coct, ext_wc, ext_kzn, ext_mpl, ext_nmb, ext_coct) %>%
-  mutate(across(A3_nat:A3_coct, ~factor(.x, levels = rank_levels, ordered = TRUE))) %>%
-  mutate(A3_nat = as.numeric(A3_nat)) %>%
+    left_join(nmb_sum, by = "T_MAPCODE") %>%
+    left_join(coct_sum, by = "T_MAPCODE") %>%
+    select(T_MAPCODE, prclost_2022, prclost_alt, prclost_nmb, prclost_coct,  A3_2022, A3_alt, A3_nmb,  A3_coct, ext_wc, ext_kzn, ext_mpl, ext_nmb, ext_coct) %>%
+  mutate(across(A3_2022:A3_coct, ~factor(.x, levels = rank_levels, ordered = TRUE))) %>%
+  mutate(A3_2022 = as.numeric(A3_2022)) %>%
   mutate(A3_alt = as.numeric(A3_alt)) %>%
   mutate(A3_nmb = as.numeric(A3_nmb)) %>%
-  mutate(A3_coct = as.numeric(A3_coct)) %>%
-  mutate(prplost_nat = 1- prop_nat2022) %>%
-  select(!prop_nat2022) %>%
-  rename(prplost_alt = prplost.x, prplost_nmb = prplost.y, prplost_coct = prplost ) %>%
-  relocate(prplost_nat, .before = prplost_alt)
-  
+  mutate(A3_coct = as.numeric(A3_coct)) 
+ 
 
 # Convert A3_* columns to ordered factors
 RLE_A3_compiled <- RLE_A3_compiled %>%
   rowwise() %>%
   mutate(
     # Calculate A3_fin as the maximum rank across columns (ordered factors are automatically ranked)
-    A3_fin = max(c_across(A3_nat:A3_coct), na.rm = TRUE)
+    A3_fin = max(c_across(A3_2022:A3_coct), na.rm = TRUE)
   ) %>%
   mutate(
-    source = case_when(A3_fin == A3_nat & 
+    source = case_when(A3_fin == A3_2022 & 
                             ext_wc < 0.95 & ext_mpl< 0.95 &  
                             ext_kzn < 0.95 & ext_nmb < 0.95 & ext_coct < 0.95 ~ "A3_nat",
-                          A3_nat == A3_coct & ext_coct > 0.95 ~ "A3_nat, A3_coct",
-                          A3_nat == A3_alt & ext_wc > 0.95 ~ "A3_nat, A3_wc",
-                          A3_nat == A3_alt & ext_kzn > 0.95 ~ "A3_nat, A3_kzn",
-                          A3_nat == A3_alt & ext_mpl > 0.95 ~ "A3_nat, A3_mpl",
-                          A3_nat  == A3_nmb & ext_nmb > 0.95 ~ "A3_nat, A3_nmb",
-                          A3_alt > A3_nat & ext_wc >0.95 ~ "A3_wc",
-                          A3_alt > A3_nat & ext_kzn >0.95 ~ "A3_kzn",
-                          A3_alt > A3_nat & ext_mpl >0.95 ~ "A3_mpl",
-                          A3_nmb > A3_nat ~ "A3_nmb", 
-                          A3_coct > A3_nat ~ "A3_coct", 
+                          A3_2022 == A3_coct & ext_coct > 0.95 ~ "A3_nat, A3_coct",
+                          A3_2022 == A3_alt & ext_wc > 0.95 ~ "A3_nat, A3_wc",
+                          A3_2022 == A3_alt & ext_kzn > 0.95 ~ "A3_nat, A3_kzn",
+                          A3_2022 == A3_alt & ext_mpl > 0.95 ~ "A3_nat, A3_mpl",
+                          A3_2022  == A3_nmb & ext_nmb > 0.95 ~ "A3_nat, A3_nmb",
+                          A3_alt > A3_2022 & ext_wc >0.95 ~ "A3_wc",
+                          A3_alt > A3_2022 & ext_kzn >0.95 ~ "A3_kzn",
+                          A3_alt > A3_2022 & ext_mpl >0.95 ~ "A3_mpl",
+                          A3_nmb > A3_2022 ~ "A3_nmb", 
+                          A3_coct > A3_2022 ~ "A3_coct", 
                           TRUE ~ "A3_nat")) %>%
   mutate(across(starts_with("A3"), ~ factor(recode(., `1` = "LC", `2` = "VU", `3` = "EN", `4` = "CR"), levels = rank_levels, ordered = TRUE))) %>%
   rename(A3_source = source) %>%
-  mutate(A3_prplost = case_when(A3_source == "A3_nat" ~ prplost_nat,
-                                A3_source == "A3_wc" | A3_source == "A3_kzn" | A3_source == "A3_mpl"  ~ prplost_alt, 
-                                A3_source =="A3_nat, A3_kzn"  ~ prplost_alt, 
-                                A3_source =="A3_nat, A3_wc"   ~ prplost_alt, 
-                                A3_source =="A3_nat, A3_mpl"  ~ prplost_alt,  
-                                A3_source =="A3_nmb"  ~ prplost_nmb, 
-                                A3_source =="A3_nat, A3_nmb"  ~ prplost_nmb, 
-                                A3_source =="A3_coct"  ~ prplost_coct, 
-                                A3_source =="A3_nat, A3_coct"  ~ prplost_coct,
+   mutate(A3_prclost = case_when(A3_source == "A3_nat" ~ prclost_2022,
+                                A3_source == "A3_wc" | A3_source == "A3_kzn" | A3_source == "A3_mpl"  ~ prclost_alt, 
+                                A3_source =="A3_nat, A3_kzn"  ~ prclost_alt, 
+                                A3_source =="A3_nat, A3_wc"   ~ prclost_alt, 
+                                A3_source =="A3_nat, A3_mpl"  ~ prclost_alt,  
+                                A3_source =="A3_nmb"  ~ prclost_nmb, 
+                                A3_source =="A3_nat, A3_nmb"  ~ prclost_nmb, 
+                                A3_source =="A3_coct"  ~ prclost_coct, 
+                                A3_source =="A3_nat, A3_coct"  ~ prclost_coct,
                                 TRUE ~ 0)) %>%
-  mutate(A3_prplost = pmax(A3_prplost, 0)) 
+  mutate(A3_prclost = pmax(A3_prclost, 0)) 
 
  
 # Add A2b general model 1990- 2022 decline
 results_A2b <- results_A2b_B_ROD %>%
-  select(prplost50_9022, A2b_9022, T_MAPCODE) %>%
+  select(prclost50_9022, A2b_9022, T_MAPCODE) %>%
   mutate(A2b_source =  "A2b") %>%
   rename(A2b_fin = A2b_9022)
 
 # Join A3 and A2 results compilations
 RLE_A2bA3_compiled <- RLE_A3_compiled %>%
   left_join(results_A2b, by =  "T_MAPCODE") %>%
-  select(T_MAPCODE, A3_fin, A3_source, A3_prplost, A2b_fin, A2b_source, prplost50_9022) %>%
-  rename(A2b_prplost50 = prplost50_9022)
+  select(T_MAPCODE, A3_fin, A3_source, A3_prclost, A2b_fin, A2b_source, prclost50_9022) %>%
+  rename(A2b_prclost50 = prclost50_9022)
  
 # write results
 write.csv(RLE_A2bA3_compiled, file = "outputs/RLE_A2bA3_compiled.csv")              
@@ -113,38 +105,35 @@ rank_levels <- c("LC", "VU", "EN", "CR")
 
 # Join summary tables from each supplementary assessment
 RLE_D <- coct_sum %>%
-  rename(D3_coct = D3, prpdeg_coct = prpdeg) %>%
-  left_join(nmb_sum, by = "T_MAPCODE") %>%
-  rename(D3_nmb = D3, prpdeg_nmb = prpdeg) %>%
-  left_join(lk_sum, by = "T_MAPCODE") %>%
-  rename(prpdeg_lk = prpdeg) %>%
-  left_join(step_sum, by = "T_MAPCODE") %>%
-  select(T_MAPCODE, D3_coct, D3_nmb, D3_lk, D3_step, ext_coct, ext_nmb, ext_lk, ext_step, prpdeg_coct, prpdeg_nmb, prpdeg_lk, prpdeg_step) %>%
- mutate(D3_fin = D3_step) %>%
+    left_join(nmb_sum, by = "T_MAPCODE") %>%
+    left_join(lk_sum, by = "T_MAPCODE") %>%
+    left_join(step_sum, by = "T_MAPCODE") %>%
+  select(T_MAPCODE, D3_coct, D3_nmb, D3_lk, D3_step, ext_coct, ext_nmb, ext_lk, ext_step, prcdeg_coct, prcdeg_nmb, prcdeg_lk, prcdeg_step) %>%
+ # only one type is threatened and it is in the STEP data - so can shortcut working out max value 
+  mutate(D3_fin = D3_step) %>%
   mutate(D3_source = case_when(ext_coct > 0.95 ~ "D3_coct", 
                                ext_nmb > 0.95 ~ "D3_nmb", 
                                ext_lk > 0.95 ~ "D3_lk", 
                                ext_step > 0.95 ~ "D3_step", 
                                TRUE ~ "")) %>%
-  mutate(D3_prpdeg = case_when(D3_source == "D3_coct"  ~ prpdeg_coct, 
-                                D3_source =="D3_nmb"  ~ prpdeg_nmb,  
-                                D3_source =="D3_lk"  ~ prpdeg_lk,  
-                                D3_source =="D3_step"  ~ prpdeg_step,   
+  mutate(D3_prcdeg = case_when(D3_source == "D3_coct"  ~ prcdeg_coct, 
+                                D3_source =="D3_nmb"  ~ prcdeg_nmb,  
+                                D3_source =="D3_lk"  ~ prcdeg_lk,  
+                                D3_source =="D3_step"  ~ prcdeg_step,   
                                 TRUE ~ 0)) %>%
-  select(T_MAPCODE, D3_fin, D3_source, D3_prpdeg) 
+  select(T_MAPCODE, D3_fin, D3_source, D3_prcdeg) 
   
   # Add invasives data and select columns
   inv <- inv_max %>%
-    select(T_MAPCODE, prp_inv, D1_invmax, D3_invmax) %>%
-    rename(prp_invmax = prp_inv)
-
+    select(T_MAPCODE, prc_inv, D3_inv)
+    
   RLE_D_compiled <- RLE_D %>%
      left_join(inv, by = "T_MAPCODE") %>%
     # add inv to D3 source
     # hack as a few types move to VU from LC 
-    mutate(D3_source = ifelse(D3_fin =="LC" & D3_invmax != "LC", "D3_inv", D3_source)) %>%
+    mutate(D3_source = ifelse(D3_fin =="LC" & D3_inv != "LC", "D3_inv", D3_source)) %>%
     #hack to correct a few types with D3in =VU
-    mutate(D3_fin = ifelse(D3_fin =="LC" & D3_invmax != "LC", D3_invmax,D3_fin))
+    mutate(D3_fin = ifelse(D3_fin =="LC" & D3_inv != "LC", D3_inv,D3_fin))
     
  
   
@@ -163,17 +152,16 @@ RLE_B_compiled <- results_A2b_B_ROD %>%
   #add invasive data derived assessment of ongoing decline
   left_join(inv_max, by = "T_MAPCODE") %>%
   #avoid confusion with similar names
-  rename(prp_invmax = prp_inv) %>%
-    #add threatened species based assessment of ongoing decline
+  #add threatened species based assessment of ongoing decline
   left_join(results_B_TH_SP, by = "T_MAPCODE") %>%
   # clean up columns
-  select(T_MAPCODE, ROD9022_rounded, B1i_rod, B2i_rod, B1i_invmax, B2i_invmax, B1iii_sp, B2iii_sp) %>%
+  select(T_MAPCODE, ROD9022_rounded, B1i_rod, B2i_rod, B1i_inv, B2i_inv, B1iii_sp, B2iii_sp) %>%
   rename(RoD = ROD9022_rounded) %>%
       # prepare to calc max from char col storing RLE status (CR EN VU LC)
      mutate(across(B1i_rod:B2iii_sp, ~factor(.x, levels = rank_levels, ordered = TRUE))) %>%
       mutate(across(B1i_rod:B2iii_sp, ~ as.numeric(.x))) %>%
-       mutate(xB1_fin = pmax(B1i_rod, B1i_invmax, B1iii_sp, na.rm = TRUE)) %>%
-        mutate(xB2_fin = pmax(B2i_rod, B2i_invmax, B2iii_sp, na.rm = TRUE))
+       mutate(xB1_fin = pmax(B1i_rod, B1i_inv, B1iii_sp, na.rm = TRUE)) %>%
+        mutate(xB2_fin = pmax(B2i_rod, B2i_inv, B2iii_sp, na.rm = TRUE))
   
 # add source column       
 
@@ -200,7 +188,7 @@ RLE_B_compiled <- RLE_B_compiled %>%
   ungroup() %>% # Ungroup to return to a normal dataframe  
   rename(B1_fin = xB1_fin, B2_fin = xB2_fin) %>%
   mutate(across(
-    c(B1i_rod, B2i_rod, B1i_invmax, B2i_invmax, B1iii_sp, B2iii_sp, B1_fin, B2_fin),
+    c(B1i_rod, B2i_rod, B1i_inv, B2i_inv, B1iii_sp, B2iii_sp, B1_fin, B2_fin),
     ~ recode(.x,
              `1` = "LC",
              `2` = "VU",
@@ -238,7 +226,7 @@ RLE_full_compiled <- RLE_A2bA3_compiled %>%
          t5 =  ifelse(RLE >1 & D3_fin == RLE, D3_source, "")) %>%
   mutate(Criteria_triggered = paste(na.omit(c(t1, t2, t3, t4, t5))[nzchar(na.omit(c(t1, t2, t3, t4, t5)))], collapse = ", ")) %>%
      mutate(Criteria_used = str_c(A3_source, A2b_source, B1_source, B2_source, D3_source, sep = ", ")) %>%
-    select(T_MAPCODE, A3_fin, A3_prplost, A2b_fin, A2b_prplost50, B1_fin, B2_fin, RoD, D3_fin, D3_prpdeg, prp_invmax, RLE, Criteria_triggered, Criteria_used) %>%
+    select(T_MAPCODE, A3_fin, A3_prclost, A2b_fin, A2b_prclost50, B1_fin, B2_fin, RoD, D3_fin, D3_prcdeg, prc_inv, RLE, Criteria_triggered, Criteria_used) %>%
   mutate(across(
     c(A3_fin, A2b_fin, B1_fin, B2_fin, D3_fin, RLE),
     ~ recode(.x,
@@ -249,18 +237,41 @@ RLE_full_compiled <- RLE_A2bA3_compiled %>%
   )) %>%
   mutate(RLE = factor(RLE, levels = rank_levels, ordered = TRUE))
   
-  # RESULTS FOR AT49 need adjustment down to VU to match 2022 (right on threshold perhaps uplist?)
-  # RESULTS FOR SKV11 need adjustment up to EN to match 2022 (suppl vlok )
+  # RESULTS FOR AT49 need consideration : new status is EN old was VU (71 vs 69% degr - caused by habitat loss of nondegraded areas reducing natural extent and pushing up % degr). Could justify EN and uplist... 
   # RESULTS FOR FFh5 need adjustment up to CR to match 2022 (right on eoo threshold of 2000km2)
-  # RESULTS FOR FOa1 need adjustment up to VU to match 2022 (right on rod threshold)
-  # RESULTS FOR FS4 need adjustment up to CR to match 2022 (right on TS/km2 threshold)
+  # RESULTS FOR FOa1 need adjustment up to VU to match 2022 (right on rod threshold)   
+  # RESULTS FOR FS4 need adjustment up to CR to match 2022 (right on TSp/km2 threshold) 
   # RESULTS FOR Gh14 need adjustment up to EN to match 2022 (right on rod threshold)
   # RESULTS FOR Gm16 need adjustment up to EN to match 2022 (right on rod threshold)
   # RESULTS FOR Gm22 need adjustment up to EN to match 2022 (right on rod threshold)
   # RESULTS FOR Gs12 need adjustment up to EN to match 2022 (right on rod threshold)
-  
+  # RESULTS FOR SKV11 need adjustment to EN to match 2022 Supplementary assessment which still holds true.
+
+# Make adjustment table 
+RLE_adjustments <- data.frame(
+  T_MAPCODE = c("AT49", "FFh5", "FOa1", "FS4", "Gh14", "Gm16", "Gm22", "Gs12", "SKv11"),
+  RLE_adjusted = c(2, 4, 2, 4, 3, 3, 3, 3, 3),
+  Criteria_triggered_adjusted = c("D3_step", 
+                                  "B1i_rod, B2i_rod, B1iii_sp, B2iii_sp",
+                                  "B2i_rod", 
+                                  "B1iii_sp", 
+                                  "B1i_rod", "B1i_rod", "B1i_rod", "B1i_rod", 
+                                  "D1_elk"),
+    stringsAsFactors = FALSE)  # optional, avoids automatic factor conversion
+
+# Join to compilation table 
+RLE_full_compiled_adjusted <- RLE_full_compiled %>%
+  left_join(RLE_adjustments, by = "T_MAPCODE") %>%
+  mutate(RLE = case_when(RLE_adjusted == 2 ~ "VU", 
+                         RLE_adjusted == 3 ~ "EN", 
+                         RLE_adjusted == 4 ~ "CR",
+                         TRUE ~ RLE)) %>%
+  mutate(Criteria_triggered = ifelse(!is.na(RLE_adjusted), Criteria_triggered_adjusted, Criteria_triggered)) %>%
+  select(-RLE_adjusted, -Criteria_triggered_adjusted)
+ 
   # write results
 write.csv(RLE_full_compiled, file = "outputs/RLE_full_compiled.csv") 
+write.csv(RLE_full_compiled_adjusted, file = "outputs/RLE_full_compiled_adjusted.csv")
 
 RLE_sum <- RLE_full_compiled %>%
   group_by(RLE) %>%

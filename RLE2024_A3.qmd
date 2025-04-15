@@ -61,25 +61,7 @@ rall_clean <- rall %>%
 Calculate the natural remaining extent of each ecosystem type at each time point. This is a simple process of expressing the current (remaining) natural extent (km2) of each ecosystem type as a proportion of the historical/potential extent.
 
 ```{r}
-# Summarise the data  for Criterion A3  assessment (remaining extent at each time point)  - Make table (long) with extent remaining and proportion natural at each year. 
-
-proprem_l <- rall_clean %>%
-  group_by(T_MAPCODE, YEAR, LC) %>%
-  summarise(km2 = sum(km2), .groups = "drop") %>%
-  group_by(T_MAPCODE,YEAR) %>%
-  mutate(prop_nat = ifelse(LC == "nat", km2 / sum(km2), NA)) %>%
-  filter(LC == "nat") %>%
-  select( T_MAPCODE, YEAR, km2, prop_nat)
-
-rle_terr_A3 <- proprem_l %>%
-      mutate(A3 = case_when(1-prop_nat >= 0.9 ~ "CR",
-                  1-prop_nat >= 0.7 ~ "EN",
-                  1-prop_nat >= 0.5 ~ "VU",
-                  TRUE ~ "LC")) 
-# write results
-write.csv(rle_terr_A3, file = "outputs/results_A3.csv") 
-
-#########################
+# Summarise the data  for Criterion A3  assessment (remaining extent at each time point)  
 # make wide results 
 proprem_w <- rall_clean %>%
   group_by(T_MAPCODE, YEAR, LC) %>%
@@ -90,31 +72,38 @@ proprem_w <- rall_clean %>%
           prop_nat2014 = `2014`/`1750`, 
           prop_nat2018 = `2018`/`1750`,
           prop_nat2020 = `2020`/`1750`,
-          prop_nat2022 = `2022`/`1750`,)
+          prop_nat2022 = `2022`/`1750`,
+          #  make percentage lost with rounding to whole % values
+          prclost_1990 = 100*round(1-`1990`/`1750`,2),
+          prclost_2014 = 100*round(1-`2014`/`1750`,2),
+          prclost_2018 = 100*round(1-`2018`/`1750`,2),
+          prclost_2020 = 100*round(1-`2020`/`1750`,2),
+          prclost_2022 = 100*round(1-`2022`/`1750`,2)
+          )
 
-rle_terr_A3w <- proprem_w %>%
-      mutate(A3_1990 = case_when(1-prop_nat1990 >= 0.9 ~ "CR",
-                  1-prop_nat1990 >= 0.7 ~ "EN",
-                  1-prop_nat1990 >= 0.5 ~ "VU",
+rle_terr_A3 <- proprem_w %>%
+      mutate(A3_1990 = case_when(prclost_1990 >= 90 ~ "CR",
+                  prclost_1990 >= 70 ~ "EN",
+                  prclost_1990 >= 50 ~ "VU",
                   TRUE ~ "LC"), 
-             A3_2014 = case_when(1-prop_nat2014 >= 0.9 ~ "CR",
-                  1-prop_nat2014 >= 0.7 ~ "EN",
-                  1-prop_nat2014 >= 0.5 ~ "VU",
-                  TRUE ~ "LC"), 
-             A3_2018 = case_when(1-prop_nat2018 >= 0.9 ~ "CR",
-                  1-prop_nat2018 >= 0.7 ~ "EN",
-                  1-prop_nat2018 >= 0.5 ~ "VU",
-                  TRUE ~ "LC"), 
-             A3_2020 = case_when(1-prop_nat2020 >= 0.9 ~ "CR",
-                  1-prop_nat2020 >= 0.7 ~ "EN",
-                  1-prop_nat2020 >= 0.5 ~ "VU",
-                  TRUE ~ "LC"), 
-             A3_2022 = case_when(1-prop_nat2022 >= 0.9 ~ "CR",
-                  1-prop_nat2022 >= 0.7 ~ "EN",
-                  1-prop_nat2022 >= 0.5 ~ "VU",
-                  TRUE ~ "LC")) 
+             A3_2014 = case_when(prclost_2014 >= 90 ~ "CR",
+                  prclost_2014 >= 70 ~ "EN",
+                  prclost_2014 >= 50 ~ "VU",
+                  TRUE ~ "LC"),
+            A3_2018 = case_when(prclost_2018 >= 90 ~ "CR",
+                  prclost_2018 >= 70 ~ "EN",
+                  prclost_2018 >= 50 ~ "VU",
+                  TRUE ~ "LC"),
+            A3_2020 = case_when(prclost_2020 >= 90 ~ "CR",
+                  prclost_2020 >= 70 ~ "EN",
+                  prclost_2020 >= 50 ~ "VU",
+                  TRUE ~ "LC"),
+            A3_2022 = case_when(prclost_2022 >= 90 ~ "CR",
+                  prclost_2022 >= 70 ~ "EN",
+                  prclost_2022 >= 50 ~ "VU",
+                  TRUE ~ "LC"))
 
 # write results
-write.csv(rle_terr_A3w, file = "outputs/results_A3w.csv") 
+write.csv(rle_terr_A3, file = "outputs/results_A3.csv") 
   
 ```
