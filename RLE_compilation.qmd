@@ -237,17 +237,16 @@ RLE_full_compiled <- RLE_A2bA3_compiled %>%
   )) %>%
   mutate(RLE = factor(RLE, levels = rank_levels, ordered = TRUE))
   
-  # RESULTS FOR AT49 need consideration : new status is EN old was VU (71 vs 69% degr - caused by habitat loss of nondegraded areas reducing natural extent and pushing up % degr). Could justify EN and uplist... 
-  # RESULTS FOR FFh5 need adjustment up to CR to match 2022 (right on eoo threshold of 2000km2)
-  # RESULTS FOR FOa1 need adjustment up to VU to match 2022 (right on rod threshold)   
-  # RESULTS FOR FS4 need adjustment up to CR to match 2022 (right on TSp/km2 threshold) 
+  # RESULTS FOR AT49 needs adjustement  down to VU (71 vs 69% degr - caused by          habitat loss of nondegraded areas reducing natural extent and pushing up % degr     ). Could justify EN and uplist... 
+  # RESULTS FOR FFh5 need adjustment up to CR to match 2022 (right on eoo threshold     of 2000km2)
+  # RESULTS FOR FOa1 need adjustment up to VU to match 2022 (right on rod threshold)   # RESULTS FOR FS4 need adjustment up to CR to match 2022 (right on TSp/km2            threshold) 
   # RESULTS FOR Gh14 need adjustment up to EN to match 2022 (right on rod threshold)
   # RESULTS FOR Gm16 need adjustment up to EN to match 2022 (right on rod threshold)
   # RESULTS FOR Gm22 need adjustment up to EN to match 2022 (right on rod threshold)
   # RESULTS FOR Gs12 need adjustment up to EN to match 2022 (right on rod threshold)
-  # RESULTS FOR SKV11 need adjustment to EN to match 2022 Supplementary assessment which still holds true.
+  # RESULTS FOR SKV11 need adjustment up to EN to match 2022 Supplementary assessment      which still holds true.
 
-# Make adjustment table 
+# Make adjustment table based on the above  
 RLE_adjustments <- data.frame(
   T_MAPCODE = c("AT49", "FFh5", "FOa1", "FS4", "Gh14", "Gm16", "Gm22", "Gs12", "SKv11"),
   RLE_adjusted = c(2, 4, 2, 4, 3, 3, 3, 3, 3),
@@ -267,7 +266,9 @@ RLE_full_compiled_adjusted <- RLE_full_compiled %>%
                          RLE_adjusted == 4 ~ "CR",
                          TRUE ~ RLE)) %>%
   mutate(Criteria_triggered = ifelse(!is.na(RLE_adjusted), Criteria_triggered_adjusted, Criteria_triggered)) %>%
-  select(-RLE_adjusted, -Criteria_triggered_adjusted)
+  mutate(manual_change = ifelse(is.na(RLE_adjusted), "RLE not adjusted", "RLE adjusted" )) %>%
+  select(-RLE_adjusted, -Criteria_triggered_adjusted) 
+   
  
   # write results
 write.csv(RLE_full_compiled, file = "outputs/RLE_full_compiled.csv") 
