@@ -8,7 +8,7 @@ bibliography: references.bib
 
 *South African National Biodiversity Institute (SANBI)*
 
-February 2025
+April 2025
 
 #### Summary
 
@@ -26,7 +26,7 @@ L[LCC_terr/WC_KZN_MPL_LC.qmd] --> C;
 M[LCC_terr/STEP_Condition.qmd] --> N[D3]; 
 O[LCC_terr/LittleKaroo_deg.qmd] --> N; 
 O[LCC_terr/NMB_Condition.qmd] --> N; 
-P[Expert assessments - ELK, RV, CB] --> E; 
+P[Expert assessments and adjustments] --> E; 
 Q[INV_terr/Invasives_combined.qmd] --> H;
 Q --> N;
 ```
@@ -68,7 +68,7 @@ For Criterion A2b the key metrics relate to the rate of habitat loss (decline in
 3.  Then subtract this from the 1990 extent and divide by the 1990 ext to get the proportional decline in extent over a 50 year period (i.e. proportion lost over 50 years = (ext1990 - ext2040/ext1990) .
 4.  In addition to this we projected the 2040 extent using ARD for 1990-2014 (previous), for 2014-2022, for 2018-2022 (to provide recent trends).
 5.  To complement these simple calculations we included three models of decline i) linear, ii) quadratic and iii) a monotonic spline.
-6.  RoD (%/y) is an additional metric (i.e. R0D9022 = ARD9022/32) used in Criterion B as evidence of ongoing decline (if the ROD \>= 0.4%/y), for the revised assessment the ROD for three periods was calculated to allow assessor to gauge the level of ongoing threat that habitat loss presents (i.e. RoD9022, RoD9014, RoD1422 and RoD1822 were calculated).
+6.  RoD (%/y) is an additional metric (i.e. R0D9022 = ARD9022/32) used in Criterion B as evidence of ongoing decline (if the ROD \>= 0.4%/y this is consider substantial ongoing decline - it will result in loss of 30% of remaining habitat in 10 years). The ROD for three periods was calculated to allow assessor to gauge the level of ongoing threat that direct habitat loss presents (i.e. RoD9022, RoD9014, RoD1422 and RoD1822 were calculated). The default ROD used was RoD9022 (ie linear rate of loss between 1990 and 2022).
 
 #### Supplementary assessments of criteria A3, B1, B2, and D3
 
@@ -86,6 +86,27 @@ The results from the supplementary assessments listed above were ingested and co
 
 -   Combined invasive alien plant B1i, B2i and D3 results ([askowno/INV_terr/outputs/data_for_rle_inv_max2.csv](askowno/INV_terr/outputs/data_for_rle_inv_max2.csv))
 
+-   Note that two additional condition data sets were analysed but showed very low levels of degradation - and were omitted from this compilation: Hardeveld degradation study (Bell et al. 2021) <https://github.com/askowno/LLC_terr/blob/main/Hardeveld_Condition.qmd> & Little Karoo degradation study (Kirsten et al. 2023) <https://github.com/askowno/LLC_terr/blob/main/LittleKaroo_Kirsten_Condition.qmd>
+
 #### RLE overall, and status for each criterion calculated
 
-Once all the results were compiled into a single table ([RLE_compilation.qmd](RLE_compilation.qmd)) the highest risk category for each ecosystem was selected, and each contributing criterion was captured. Key metrics, required in the reporting of RLE were also captured (e.g. extent remaining, EOO, AOO, percentage invaded) ([outputs/RLE_full_compiled.csv](outputs/RLE_full_compiled.csv)).
+Once all the results were compiled into a single table ([RLE_compilation.qmd](RLE_compilation.qmd)) the highest risk category for each ecosystem was selected, and each contributing criterion was captured. Key metrics, required in the reporting of RLE were also captured (e.g. extent remaining, EOO, AOO, percentage invaded) ([outputs/RLE_full_compiled.csv](outputs/RLE_full_compiled.csv)). Final adjustments and supplementary assessments undertaken by experts were added as a final step ([outputs/RLE_full_compiled.csv](outputs/RLE_full_compiled.csv)).
+
+RESULTS FOR AT49 needs adjustement down to VU (71 vs 69% degr - caused by habitat loss of nondegraded areas reducing natural extent and pushing up % degr ). Could justify EN and uplist...
+
+\# RESULTS FOR FFh5 need adjustment up to CR to match 2022 (right on eoo threshold of 2000km2) \# RESULTS FOR FOa1 need adjustment up to VU to match 2022 (right on rod threshold) \# RESULTS FOR FS4 need adjustment up to CR to match 2022 (right on TSp/km2 threshold) \# RESULTS FOR Gh14 need adjustment up to EN to match 2022 (right on rod threshold) \# RESULTS FOR Gm16 need adjustment up to EN to match 2022 (right on rod threshold) \# RESULTS FOR Gm22 need adjustment up to EN to match 2022 (right on rod threshold) \# RESULTS FOR Gs12 need adjustment up to EN to match 2022 (right on rod threshold) \# RESULTS FOR SKV11 need adjustment up to EN to match 2022 Supplementary assessment which still holds true.
+
+| MAPCODE | Col2 | Col3 | Col4 |
+|---------|------|------|------|
+| AT49    |      |      |      |
+| FFh5    |      |      |      |
+| FOa1    |      |      |      |
+| FS4     |      |      |      |
+| Gh14    |      |      |      |
+| Gm16    |      |      |      |
+| Gm22    |      |      |      |
+| Gs12    |      |      |      |
+| SKv11   |      |      |      |
+|         |      |      |      |
+
+: Expert adjustments

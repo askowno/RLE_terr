@@ -14,7 +14,9 @@ results_A3nat <- read.csv("C:/Rdata/RLE_terr/outputs/results_A3.csv")
 inv_max <- read.csv("C:/Rdata/INV_terr/outputs/data_for_rle_inv_max2.csv")
 results_B_TH_SP <- read.csv("C:/Rdata/RLE_terr/outputs/results_B_TH_SP.csv")
 
-
+# note that two additionalcondition datasets were analysed but they showed very low leves of degradation - and were ommitted from this compilation; 
+# Hardeveld degradation study (Bell et al. 2021) https://github.com/askowno/LLC_terr/blob/main/Hardeveld_Condition.qmd &  
+# Little Karoo degradation study (Kirsten et al. 2023) https://github.com/askowno/LLC_terr/blob/main/LittleKaroo_Kirsten_Condition.qmd
 ```
 
 ### Criterion A
