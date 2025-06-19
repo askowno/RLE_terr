@@ -27,7 +27,7 @@ M[LCC_terr/STEP_Condition.qmd] --> N[D3];
 O[LCC_terr/LittleKaroo_deg.qmd] --> N; 
 O[LCC_terr/NMB_Condition.qmd] --> N; 
 P[Expert assessments and adjustments] --> E; 
-Q[INV_terr/Invasives_combined.qmd] --> H;
+Q[INV_terr/Invasives_percentages_all.qmd] --> H;
 Q --> N;
 ```
 
@@ -43,7 +43,7 @@ Q --> N;
 
 -   Criterion A3, B1, B2, and D3 assessments using City of Cape Town BioNet data on land cover and ecosystem condition (CoCT, 2024) . Workflow in the LCC_terr repo [CoCT_LC_Condition.qmd](CoCT_LC_Condition.qmd)
 
--   Criterion B1, B2, D3 assessments using a combined invasive alien plant layer that includes: a) the National Invasive Alien Plant Survey data ([Kotze et al., 2025](https://doi.org/10.1007/s10530-025-03558-9)), b) the CFR Invasive Alien Tree Survey data ([Rebelo et al. 2024](https://doi.org/10.25413/SUN.27377211)), c) the MAPWAPS IAP data ([Skosana et al., 2024a](https://doi.org/10.25413/SUN.25050368), [Skosana et al., 2024b](https://doi.org/10.25413/SUN.25050401), [Cogill et al., 2024a](https://doi.org/10.25413/SUN.25066151), [Cogill et al., 2024b](https://doi.org/10.25413/SUN.25050314)). Workflow in the INV_terr repo [Invasives_combined.qmd](INV_terr/Invasives_combined.qmd)
+-   Criterion B1, B2, D3 assessments using a combined invasive alien plant layer that includes: a) the National Invasive Alien Plant Survey data ([Kotze et al., 2025](https://doi.org/10.1007/s10530-025-03558-9)), b) the CFR Invasive Alien Tree Survey data ([Rebelo et al. 2024](https://doi.org/10.25413/SUN.27377211)), c) the MAPWAPS IAP data ([Skosana et al., 2024a](https://doi.org/10.25413/SUN.25050368), [Skosana et al., 2024b](https://doi.org/10.25413/SUN.25050401), [Cogill et al., 2024a](https://doi.org/10.25413/SUN.25066151), [Cogill et al., 2024b](https://doi.org/10.25413/SUN.25050314)), d) EI for Water Security (EI4WS) project (SANBI, Geonest and INR 2024). Workflow in the INV_terr repo [INV_terr/Invasives_percentages_all.qmd](INV_terr/Invasives_percentages_all.qmd)
 
 -   Criterion D3 assessments using STEP ecosystem condition data (Lloyd et al., 2022). Workflow in the LCC_terr repo [STEP_Condition.qmd](STEP_Condition.qmd)
 
@@ -90,23 +90,4 @@ The results from the supplementary assessments listed above were ingested and co
 
 #### RLE overall, and status for each criterion calculated
 
-Once all the results were compiled into a single table ([RLE_compilation.qmd](RLE_compilation.qmd)) the highest risk category for each ecosystem was selected, and each contributing criterion was captured. Key metrics, required in the reporting of RLE were also captured (e.g. extent remaining, EOO, AOO, percentage invaded) ([outputs/RLE_full_compiled.csv](outputs/RLE_full_compiled.csv)). Final adjustments and supplementary assessments undertaken by experts were added as a final step ([outputs/RLE_full_compiled.csv](outputs/RLE_full_compiled.csv)).
-
-RESULTS FOR AT49 needs adjustement down to VU (71 vs 69% degr - caused by habitat loss of nondegraded areas reducing natural extent and pushing up % degr ). Could justify EN and uplist...
-
-\# RESULTS FOR FFh5 need adjustment up to CR to match 2022 (right on eoo threshold of 2000km2) \# RESULTS FOR FOa1 need adjustment up to VU to match 2022 (right on rod threshold) \# RESULTS FOR FS4 need adjustment up to CR to match 2022 (right on TSp/km2 threshold) \# RESULTS FOR Gh14 need adjustment up to EN to match 2022 (right on rod threshold) \# RESULTS FOR Gm16 need adjustment up to EN to match 2022 (right on rod threshold) \# RESULTS FOR Gm22 need adjustment up to EN to match 2022 (right on rod threshold) \# RESULTS FOR Gs12 need adjustment up to EN to match 2022 (right on rod threshold) \# RESULTS FOR SKV11 need adjustment up to EN to match 2022 Supplementary assessment which still holds true.
-
-| MAPCODE | Col2 | Col3 | Col4 |
-|---------|------|------|------|
-| AT49    |      |      |      |
-| FFh5    |      |      |      |
-| FOa1    |      |      |      |
-| FS4     |      |      |      |
-| Gh14    |      |      |      |
-| Gm16    |      |      |      |
-| Gm22    |      |      |      |
-| Gs12    |      |      |      |
-| SKv11   |      |      |      |
-|         |      |      |      |
-
-: Expert adjustments
+Once all the results were compiled into a single table ([RLE_compilation.qmd](RLE_compilation.qmd)) the highest risk category for each ecosystem was selected, and each contributing criterion was captured. Key metrics, required in the reporting of RLE were also captured (e.g. extent remaining, EOO, AOO, percentage invaded) ([outputs/RLE_full_compiled.csv](outputs/RLE_full_compiled.csv)). Final adjustments and supplementary assessments undertaken by experts were added as a final step ([outputs/RLE_full_compiled_adjusted.csv](outputs/RLE_full_compiled_adjusted.csv)).

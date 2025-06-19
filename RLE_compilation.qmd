@@ -17,7 +17,7 @@ results_A3nat <- read.csv("C:/Rdata/RLE_terr/outputs/results_A3.csv")
 # data from meta nalysis of species threats per ecosystem type
 results_B_TH_SP <- read.csv("C:/Rdata/RLE_terr/outputs/results_B_TH_SP.csv")
 
-# data from invasive layers
+# data from invasive layers (created in Invasive_percentagres_all.qmd)
 inv_comb <- read.csv("C:/Rdata/INV_terr/outputs/data_for_rle_inv_comb.csv")
 
 # summed max stacked raster  invasive coverage - over estimate of IAP cover
