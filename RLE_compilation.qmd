@@ -3,16 +3,25 @@
 ```{r}
 library(tidyverse)
 
-# import data
+# import data for Criterion D and A from various sources
 alt_sum <- read.csv("C:/Rdata/LCC_terr/outputs/alt_sum.csv")
 step_sum <- read.csv("C:/Rdata/LCC_terr/outputs/step_sum.csv")
 lk_sum <- read.csv("C:/Rdata/LCC_terr/outputs/lk_sum.csv")
 coct_sum <- read.csv("C:/Rdata/LCC_terr/outputs/coct_sum.csv")
 nmb_sum <- read.csv("C:/Rdata/LCC_terr/outputs/nmb_sum.csv")
+ 
+# data from land cover chnage stats from NLC 7 class
 results_A2b_B_ROD <- read.csv("C:/Rdata/RLE_terr/outputs/results_A2b_B_ROD.csv")
 results_A3nat <- read.csv("C:/Rdata/RLE_terr/outputs/results_A3.csv")
-inv_max <- read.csv("C:/Rdata/INV_terr/outputs/data_for_rle_inv_max2.csv")
+
+# data from meta nalysis of species threats per ecosystem type
 results_B_TH_SP <- read.csv("C:/Rdata/RLE_terr/outputs/results_B_TH_SP.csv")
+
+# data from invasive layers
+inv_comb <- read.csv("C:/Rdata/INV_terr/outputs/data_for_rle_inv_comb.csv")
+
+# summed max stacked raster  invasive coverage - over estimate of IAP cover
+#inv_max <- read.csv("C:/Rdata/INV_terr/outputs/data_for_rle_inv_max2.csv")
 
 # note that two additionalcondition datasets were analysed but they showed very low leves of degradation - and were ommitted from this compilation; 
 # Hardeveld degradation study (Bell et al. 2021) https://github.com/askowno/LLC_terr/blob/main/Hardeveld_Condition.qmd &  
@@ -126,17 +135,24 @@ RLE_D <- coct_sum %>%
   select(T_MAPCODE, D3_fin, D3_source, D3_prcdeg) 
   
   # Add invasives data and select columns
-  inv <- inv_max %>%
-    select(T_MAPCODE, prc_inv, D3_inv)
+  inv_D <- inv_comb %>%
+    select(T_MAPCODE, prpinv_max, D3_inv) %>%
+     mutate(D3_inv = case_when(D3_inv == 4 ~ "CR", 
+                               D3_inv == 3 ~ "EN", 
+                               D3_inv == 2 ~ "VU", 
+                               D3_inv == 1 ~ "LC", 
+                               TRUE ~ "check"))
     
   RLE_D_compiled <- RLE_D %>%
-     left_join(inv, by = "T_MAPCODE") %>%
+     left_join(inv_D, by = "T_MAPCODE") %>%
     # add inv to D3 source
-    # hack as a few types move to VU from LC 
-    mutate(D3_source = ifelse(D3_fin =="LC" & D3_inv != "LC", "D3_inv", D3_source)) %>%
-    #hack to correct a few types with D3in =VU
-    mutate(D3_fin = ifelse(D3_fin =="LC" & D3_inv != "LC", D3_inv,D3_fin))
-    
+    mutate(D3_source = if_else(
+    !is.na(prpinv_max),                         # only if prpinv_max is not NA
+    paste(D3_source, "D3_inv", sep = "; "),     # append D3_inv to existing text
+    D3_source                                   # otherwise keep as is
+  ))%>%
+  mutate(D3_source = str_remove(D3_source, "^;\\s*"))
+   # note no types are threatened due to D3 so no chnages to D3_fin are required but if this chaages extra code will have to ensure that the highest threat status is captured in D3_fin 
  
   
 
@@ -149,12 +165,22 @@ Criterion B compiled
 
 ```{r}
 # Add B ROD from general model 1990- 2022 decline
-RLE_B_compiled <- results_A2b_B_ROD %>%
+# prep invasives B results 
+inv_B <- inv_comb %>%
+    select(T_MAPCODE, prpinv_max, B1i_inv, B2i_inv) %>%
+     mutate(across(starts_with("B") , ~ case_when(.x == 4 ~ "CR", 
+                               .x == 3 ~ "EN", 
+                               .x == 2 ~ "VU", 
+                               .x == 1 ~ "LC", 
+                               TRUE ~ "check")))
+# combine all B results 
+  RLE_B_compiled <- results_A2b_B_ROD %>%
   select(T_MAPCODE, ROD9022_rounded, B1i_rod, B2i_rod) %>%
   #add invasive data derived assessment of ongoing decline
-  left_join(inv_max, by = "T_MAPCODE") %>%
-  #avoid confusion with similar names
-  #add threatened species based assessment of ongoing decline
+  left_join(inv_B, by = "T_MAPCODE") %>%
+     mutate(B1i_inv = if_else(is.na(B1i_inv), "LC", B1i_inv)) %>%
+     mutate(B2i_inv = if_else(is.na(B2i_inv), "LC", B2i_inv)) %>%
+       #add threatened species based assessment of ongoing decline
   left_join(results_B_TH_SP, by = "T_MAPCODE") %>%
   # clean up columns
   select(T_MAPCODE, ROD9022_rounded, B1i_rod, B2i_rod, B1i_inv, B2i_inv, B1iii_sp, B2iii_sp) %>%
@@ -164,6 +190,7 @@ RLE_B_compiled <- results_A2b_B_ROD %>%
       mutate(across(B1i_rod:B2iii_sp, ~ as.numeric(.x))) %>%
        mutate(xB1_fin = pmax(B1i_rod, B1i_inv, B1iii_sp, na.rm = TRUE)) %>%
         mutate(xB2_fin = pmax(B2i_rod, B2i_inv, B2iii_sp, na.rm = TRUE))
+    
   
 # add source column       
 
@@ -228,7 +255,7 @@ RLE_full_compiled <- RLE_A2bA3_compiled %>%
          t5 =  ifelse(RLE >1 & D3_fin == RLE, D3_source, "")) %>%
   mutate(Criteria_triggered = paste(na.omit(c(t1, t2, t3, t4, t5))[nzchar(na.omit(c(t1, t2, t3, t4, t5)))], collapse = ", ")) %>%
      mutate(Criteria_used = str_c(A3_source, A2b_source, B1_source, B2_source, D3_source, sep = ", ")) %>%
-    select(T_MAPCODE, A3_fin, A3_prclost, A2b_fin, A2b_prclost50, B1_fin, B2_fin, RoD, D3_fin, D3_prcdeg, prc_inv, RLE, Criteria_triggered, Criteria_used) %>%
+    select(T_MAPCODE, A3_fin, A3_prclost, A2b_fin, A2b_prclost50, B1_fin, B2_fin, RoD, D3_fin, D3_prcdeg, prpinv_max, RLE, Criteria_triggered, Criteria_used) %>%
   mutate(across(
     c(A3_fin, A2b_fin, B1_fin, B2_fin, D3_fin, RLE),
     ~ recode(.x,
@@ -239,36 +266,29 @@ RLE_full_compiled <- RLE_A2bA3_compiled %>%
   )) %>%
   mutate(RLE = factor(RLE, levels = rank_levels, ordered = TRUE))
   
-  # RESULTS FOR AT49 needs adjustement  down to VU (71 vs 69% degr - caused by          habitat loss of nondegraded areas reducing natural extent and pushing up % degr     ). Could justify EN and uplist... 
+  
   # RESULTS FOR FFh5 need adjustment up to CR to match 2022 (right on eoo threshold     of 2000km2)
   # RESULTS FOR FOa1 need adjustment up to VU to match 2022 (right on rod threshold)   # RESULTS FOR FS4 need adjustment up to CR to match 2022 (right on TSp/km2            threshold) 
   # RESULTS FOR Gh14 need adjustment up to EN to match 2022 (right on rod threshold)
   # RESULTS FOR Gm16 need adjustment up to EN to match 2022 (right on rod threshold)
   # RESULTS FOR Gm22 need adjustment up to EN to match 2022 (right on rod threshold)
   # RESULTS FOR Gs12 need adjustment up to EN to match 2022 (right on rod threshold)
-  # RESULTS FOR SKV11 need adjustment up to EN to match 2022 Supplementary assessment      which still holds true.
+  # RESULTS FOR SKV11 need adjustment up to EN to match 2022 Supplementary assessment (Vlok et al 2020)   which still holds true.
 
 # Make adjustment table based on the above  
 RLE_adjustments <- data.frame(
-  T_MAPCODE = c("AT49", "FFh5", "FOa1", "FS4", "Gh14", "Gm16", "Gm22", "Gs12", "SKv11"),
-  RLE_adjusted = c(2, 4, 2, 4, 3, 3, 3, 3, 3),
-  Criteria_triggered_adjusted = c("D3_step", 
-                                  "B1i_rod, B2i_rod, B1iii_sp, B2iii_sp",
-                                  "B2i_rod", 
-                                  "B1iii_sp", 
-                                  "B1i_rod", "B1i_rod", "B1i_rod", "B1i_rod", 
-                                  "D1_elk"),
+  T_MAPCODE = c("FFh5", "FOa1", "FS4", "Gh14", "Gm16", "Gm22", "Gs12", "SKv11"),
+  RLE_adjusted = c( "CR", "VU", "CR", "EN", "EN", "EN", "EN", "EN"),
+  Criteria_triggered_adjusted = c("B1i_rod, B2i_rod, B1iii_sp, B2iii_sp",
+                                  "B2i_rod", "B1iii_sp", "B1i_rod", "B1i_rod",                                        "B1i_rod", "B1i_rod","D1_elk"),
     stringsAsFactors = FALSE)  # optional, avoids automatic factor conversion
 
 # Join to compilation table 
 RLE_full_compiled_adjusted <- RLE_full_compiled %>%
   left_join(RLE_adjustments, by = "T_MAPCODE") %>%
-  mutate(RLE = case_when(RLE_adjusted == 2 ~ "VU", 
-                         RLE_adjusted == 3 ~ "EN", 
-                         RLE_adjusted == 4 ~ "CR",
-                         TRUE ~ RLE)) %>%
+  mutate(RLE = if_else(!is.na(RLE_adjusted), RLE_adjusted, RLE)) %>%
   mutate(Criteria_triggered = ifelse(!is.na(RLE_adjusted), Criteria_triggered_adjusted, Criteria_triggered)) %>%
-  mutate(manual_change = ifelse(is.na(RLE_adjusted), "RLE not adjusted", "RLE adjusted" )) %>%
+  mutate(expert_change = ifelse(is.na(RLE_adjusted), "RLE not adjusted", "RLE adjusted" )) %>%
   select(-RLE_adjusted, -Criteria_triggered_adjusted) 
    
  
