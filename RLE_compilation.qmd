@@ -276,8 +276,130 @@ RLE_full_compiled_adjusted <- RLE_full_compiled %>%
 write.csv(RLE_full_compiled, file = "outputs/RLE_full_compiled.csv") 
 write.csv(RLE_full_compiled_adjusted, file = "outputs/RLE_full_compiled_adjusted.csv")
 
-RLE_sum <- RLE_full_compiled %>%
-  group_by(RLE) %>%
-  summarise(num_types = n_distinct(T_MAPCODE), .groups = "drop" )
-   
+
+```
+
+New Incomplete - make plots - code from rivers repo
+
+```{r}
+library(sf)
+# Add veg map and table to access Biomes and Names 
+veg <-st_read("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_change.gdb", "NVM2024Final_IEM5_12_07012025") %>% #ensure it uses proj =  wgs84 aea cm 25 -24 -33
+st_drop_geometry() %>%
+  distinct(T_MAPCODE, T_Name,  T_BIOME,T_BIOREGION) %>%
+  filter(!is.na(T_MAPCODE), T_MAPCODE != "<Null>", T_MAPCODE != "")
+
+
+# make summary counts of RLE categories per biome
+ rle_sum <- RLE_full_compiled_adjusted %>%
+    left_join(veg, by = "T_MAPCODE") %>%
+     filter(T_MAPCODE != "Gd9") %>%   
+   group_by(RLE, T_BIOME) %>%
+  summarise(count = n(),.groups = 'drop') %>%
+  pivot_wider(names_from = RLE, 
+              values_from = count, values_fill = 0) %>%
+   relocate(VU, .after = EN) %>%
+    # Add row-wise TOTAL
+  rowwise() %>%
+  mutate(Total = sum(c_across(where(is.numeric)))) %>%
+  ungroup() %>%
+  # Add TOTAL row (column-wise sums)
+  bind_rows(summarise(., T_BIOME = "Total", across(where(is.numeric), sum))) %>%
+  # Add RLEI
+  mutate(RLIE = (1-((CR*4)+(EN*3)+(VU*2)+(LC*0))/((CR+EN+VU+LC)*5)))  %>%
+  mutate(T_BIOME = factor(T_BIOME, levels = c("Total", "Succulent Karoo", "Savanna", "Nama-Karoo" , "Indian Ocean Coastal Belt", "Grassland", "Fynbos", "Forests","Desert", "Azonal Vegetation", "Albany Thicket" ))) %>% ## ggplot plots inverted factors!
+   arrange(T_BIOME)
+ 
+ # export a csv of results - COUNT of RLE 18 per slope zone
+ write.csv(rle_sum, file = "outputs/rle_count.csv") 
+ 
+ # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ # make summary extent of RLE categories per biome
+ 
+ rle_ext <- RLE_full_compiled_adjusted %>%
+    left_join(veg, by = "T_MAPCODE") %>%
+    left_join(results_A2b_B_ROD[,c("T_MAPCODE", "X1750", "X2022")], by="T_MAPCODE") %>%
+   filter(T_MAPCODE != "Gd9") %>% 
+    group_by(RLE, T_BIOME) %>%
+  summarise(ext2022 = round(sum(X2022), 2),.groups = 'drop') %>%
+  pivot_wider(names_from = RLE, 
+              values_from = ext2022, values_fill = 0) %>%
+   relocate(VU, .after = EN) %>%
+    # Add row-wise TOTAL
+  rowwise() %>%
+  mutate(Total = sum(c_across(where(is.numeric)))) %>%
+  ungroup() %>%
+  # Add TOTAL row (column-wise sums)
+  bind_rows(summarise(., T_BIOME = "Total", across(where(is.numeric), sum))) %>%
+  # Add RLEI
+  #mutate(RLIE = (1-((CR*4)+(EN*3)+(VU*2)+(LC*0))/((CR+EN+VU+LC)*5)))  %>%
+  mutate(T_BIOME = factor(T_BIOME, levels = c("Total", "Succulent Karoo", "Savanna", "Nama-Karoo" , "Indian Ocean Coastal Belt", "Grassland", "Fynbos", "Forests","Desert", "Azonal Vegetation", "Albany Thicket" ))) %>% ## ggplot plots inverted factors!
+   arrange(T_BIOME)
+ 
+  # export a csv of results - EXTENT (km2) of RLE 24 per BIOME
+  write.csv(rle_ext, file = "outputs/rle_ext.csv")
+  
+
+```
+
+Make plots
+
+```{r}
+# load nbaR package : first run this in console devtools::install_github("SANBI-NBA/nbaR") 
+library(nbaR)
+
+# Use NBA package to make RLE 2024  plot  of number of types per RLE class per biome
+pd_rle_sum <- rle_sum %>%
+    rename(`Critically Endangered` = CR, 
+           `Endangered` = EN, 
+           `Vulnerable` = VU, 
+           `Least Concern` = LC ) # %>%
+  # select(-...1) # required if importing from CSV
+ 
+rle_barplot_sum <- nba_plot(pd_rle_sum,
+                  `T_BIOME`,
+                  2:5,
+                 CHRT = "bar",
+                 NUM = TRUE,
+                 LAB = "Percentage of ecosystem types",
+                SAVE = NULL)
+
+rle_barplot_sum
+
+#export the 2024 plot of counts 
+ggsave(
+  filename = "outputs/rle_barplot_sum.jpeg", # File name
+  plot = rle_barplot_sum,                  # Plot object
+  device = "jpeg",                        # File format
+  width = 16, height = 12, units = "cm",   # Dimensions
+  dpi = 300                               # Resolution
+)
+
+
+# Use NBA package to make RLE 2024  plot  of remaining extent per RLE class per biome  
+pd_rle_ext <- rle_ext%>%
+    rename(`Critically Endangered` = CR, 
+           `Endangered` = EN, 
+           `Vulnerable` = VU, 
+           `Least Concern` = LC ) # %>%
+  # select(-...1) # required if importing from CSV
+ 
+rle_barplot_ext <- nba_plot(pd_rle_ext,
+                  `T_BIOME`,
+                  2:5,
+                 CHRT = "bar",
+                 NUM = FALSE,
+                 LAB = "Percentage of natural ecosystem extent",
+                SAVE = NULL)
+
+rle_barplot_ext
+
+#export the 2024 plot of counts 
+ggsave(
+  filename = "outputs/rle_barplot_ext.jpeg", # File name
+  plot = rle_barplot_ext,                  # Plot object
+  device = "jpeg",                        # File format
+  width = 16, height = 12, units = "cm",   # Dimensions
+  dpi = 300                               # Resolution
+)
 ```
