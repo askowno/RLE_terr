@@ -272,20 +272,27 @@ RLE_full_compiled <- RLE_A2bA3_compiled %>%
 
 #### Expert adjustments based on supplementary data and other considerations
 
+-   Remove types outside of SA = Gd9
+
+-   Remove types assessed in other realms = FOa2 (Swamp Forest)
+
+-   Remove types assessed in other relams and with global RLE assessments = Mangroves (FOa3) Endangered - assessed as part of GLobal Mangrove RLE (Agulhus Mangroves, EN, 2024)
+
+-   SKV11 needs adjustment up to EN to match 2022 Supplementary assessment (Vlok & Vlok., 2020 - (D1_sup) degradation from overgrazing ongoing and recent) which is still valid.
+
+Three Richtersveld types adjusted based on Jurgens et al., 2025; this data includes 50 years of longterm intensive field plot based data (high confidence).
+
+-    SKr7 mean condition \>50% severity 12 plots & EOO \<20000km2 : Status EN (B1i_sup)
+
+-    SKr2 mean condition \>90% severity 15 plots & EOO \<2000km2 : Status CR (B1i_sup)
+
+-    SKr13 mean condition \>90% severity 6 plots & EOO \<2000km2 : CR (B1i_sup)
+
+Corrections: FFh5 needs adjustment up to CR to match 2022 (right on eoo threshold of 2000km2); FOa1 needs adjustment up to VU to match 2022 (right on rod threshold): FS4 needs adjustment up to CR to match 2022 (right on TSp/km2 threshold); Gh14 needs adjustment up to EN to match 2022 (right on rod threshold); Gm16 needs adjustment up to EN to match 2022 (right on rod threshold); Gm22 needs adjustment up to EN to match 2022 (right on rod threshold); Gs12 needs adjustment up to EN to match 2022 (right on rod threshold)
+
 ```{r}
-# Expert Adjustments of Compiled RLE list 
-  # RESULTS FOR FFh5 need adjustment up to CR to match 2022 (right on eoo threshold     of 2000km2)
-  # RESULTS FOR FOa1 need adjustment up to VU to match 2022 (right on rod threshold)   # RESULTS FOR FS4 need adjustment up to CR to match 2022 (right on TSp/km2            threshold) 
-  # RESULTS FOR Gh14 need adjustment up to EN to match 2022 (right on rod threshold)
-  # RESULTS FOR Gm16 need adjustment up to EN to match 2022 (right on rod threshold)
-  # RESULTS FOR Gm22 need adjustment up to EN to match 2022 (right on rod threshold)
-  # RESULTS FOR Gs12 need adjustment up to EN to match 2022 (right on rod threshold)
-  # RESULTS FOR SKV11 need adjustment up to EN to match 2022 Supplementary              assessment (Vlok et al 2020) which still holds true.
-  
-  # RESULTS FOR three Richertsveld types adjusted based on Jurgens et al 2025; this     data includes 50 years of longterm field plots.  
-    # SKr7  mean 2.58 12 plots [EN] - drivers
-    # SKr2  mean 6.21 15 plots [CR] - drivers
-    # SKr13 mean 7.25 6 plots [CR] - drivers
+
+# Expert Adjustments of Compiled RLE list  
 
 # Make adjustment table based on the above  
 RLE_adjustments <- data.frame(
@@ -301,11 +308,11 @@ RLE_full_compiled_adjusted <- RLE_full_compiled %>%
   mutate(RLE = if_else(!is.na(RLE_adjusted), RLE_adjusted, RLE)) %>%
   mutate(Criteria_triggered = ifelse(!is.na(RLE_adjusted), Criteria_triggered_adjusted, Criteria_triggered)) %>%
   mutate(expert_change = ifelse(is.na(RLE_adjusted), "RLE not adjusted", "RLE adjusted" )) %>%
-  select(-RLE_adjusted, -Criteria_triggered_adjusted) 
+  select(-RLE_adjusted, -Criteria_triggered_adjusted) %>%
+ filter(!T_MAPCODE %in% c("FOa2", "FOa3", "Gd9"))
    
  
   # write results
-
 write.csv(RLE_full_compiled_adjusted, file = "outputs/RLE_full_compiled_adjusted.csv")
 ```
 
