@@ -91,3 +91,5 @@ The results from the supplementary assessments listed above were ingested and co
 #### RLE overall, and status for each criterion calculated
 
 Once all the results were compiled into a single table ([RLE_compilation.qmd](RLE_compilation.qmd)) the highest risk category for each ecosystem was selected, and each contributing criterion was captured. Key metrics, required in the reporting of RLE were also captured (e.g. extent remaining, EOO, AOO, percentage invaded) ([outputs/RLE_full_compiled.csv](outputs/RLE_full_compiled.csv)). Final adjustments and supplementary assessments undertaken by experts (Vlok & Vlok, 2020 [SKv11]; Jurgens et al., 2025 [SKr7, SKr2, SKr13]) and manual corrections of ecosystems on the threshold of categories were added as a final step ([outputs/RLE_full_compiled_adjusted.csv](outputs/RLE_full_compiled_adjusted.csv)).
+
+![Number of ecosystems types per Biome in each Red List of Ecosystem risk Category](outputs/rle_barplot_sum.jpeg)
