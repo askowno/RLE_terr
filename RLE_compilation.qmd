@@ -282,11 +282,11 @@ RLE_full_compiled <- RLE_A2bA3_compiled %>%
 
 Three Richtersveld types adjusted based on Jurgens et al., 2025; this data includes 50 years of longterm intensive field plot based data (high confidence).
 
--    SKr7 mean condition \>50% severity 12 plots & EOO \<20000km2 : Status EN (B1i_sup)
+-   SKr7 mean condition \>50% severity 12 plots & EOO \<20000km2 : Status EN (B1i_sup)
 
--    SKr2 mean condition \>90% severity 15 plots & EOO \<2000km2 : Status CR (B1i_sup)
+-   SKr2 mean condition \>90% severity 15 plots & EOO \<2000km2 : Status CR (B1i_sup)
 
--    SKr13 mean condition \>90% severity 6 plots & EOO \<2000km2 : CR (B1i_sup)
+-   SKr13 mean condition \>90% severity 6 plots & EOO \<2000km2 : CR (B1i_sup)
 
 Corrections: FFh5 needs adjustment up to CR to match 2022 (right on eoo threshold of 2000km2); FOa1 needs adjustment up to VU to match 2022 (right on rod threshold): FS4 needs adjustment up to CR to match 2022 (right on TSp/km2 threshold); Gh14 needs adjustment up to EN to match 2022 (right on rod threshold); Gm16 needs adjustment up to EN to match 2022 (right on rod threshold); Gm22 needs adjustment up to EN to match 2022 (right on rod threshold); Gs12 needs adjustment up to EN to match 2022 (right on rod threshold)
 
