@@ -54,7 +54,8 @@ Convert the raster of vegetation remnants to a Spatvector (terra object) ensurin
 
 ```{r}
 #convert spatrast to spatvect and then to sf object (simple features)
-veg_poly <- as.polygons(vegrem, dissolve = TRUE) 
+
+veg_poly <- as.polygons(vegrem, dissolve = TRUE) # use this for EOO
 veg_sf <- st_as_sf(veg_poly) 
 # remove Null rows
 veg_sf <- veg_sf %>%
@@ -63,7 +64,7 @@ veg_sf <- veg_sf %>%
 
 ### Compute convex hull area per veg type using remnants data
 
-Use a for loop to compute the EOO for each ecosystem type usingt he T_MAPCODE attribute field. SF package has a function called convex_hull which computes EOO.
+Use a for loop to compute the EOO for each ecosystem type using the T_MAPCODE attribute field. SF package has a function called convex_hull which computes EOO.
 
 ```{r}
 # Initialize a list to store results
