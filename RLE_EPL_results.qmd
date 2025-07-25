@@ -1,0 +1,57 @@
+---
+title: "RLE_EPL_results"
+format: html
+---
+
+```{r}
+library(tidyverse)
+library(sf)
+
+# load RLE and EPL results, then combine these and check the unluckies
+RLE <- read.csv("C:/Rdata/RLE_terr/outputs/RLE_full_compiled_adjusted.csv")
+EPL24 <- read.csv("C:/Rdata/EPL_terr/outputs/results_df_EPL_2024_invasives2.csv")
+
+# remove mangrove and swamp forest from EPL to align with RLE
+EPL24 <- filter(EPL24, !T_MAPCODE %in% c("FOa2", "FOa3"))
+
+# load veg spatial data to get all attributes
+veg <- st_read("C:/GIS/NBA/VegMap/VEGMAP2024/NVM2024final/NVM2024final.gdb", "NVM2024Final_IEM5_12_07012025")
+veg <- veg %>%
+  filter(T_MAPCODE != '<Null>'& T_MAPCODE != "" & 
+           T_MAPCODE != "FOa2" & T_MAPCODE!= "FOa3", T_MAPCODE!= "Gd9" ) %>%
+    st_drop_geometry() %>%
+   distinct(T_MAPCODE,T_BIOME, T_Name, .keep_all = TRUE) %>%
+   select(T_MAPCODE,T_BIOME, T_Name)
+
+# combine
+ter_results <- veg %>%
+  left_join(RLE,by = "T_MAPCODE" ) %>%
+  select(T_MAPCODE,T_BIOME, T_Name, RLE, Criteria_triggered) %>%
+  left_join(EPL24, by = "T_MAPCODE") %>%
+    select(T_MAPCODE,T_BIOME.x, T_Name, RLE, Criteria_triggered, epl_nat_inv24) %>%
+    rename(EPL = epl_nat_inv24, T_BIOME = T_BIOME.x) %>%
+  mutate(RLE = factor(RLE, levels = c("LC", "VU", "EN", "CR"), ordered = TRUE)) %>%
+  mutate(EPL = factor(EPL, levels = c("NP", "PP", "MP", "WP"), ordered = TRUE)) %>%
+  unite("RLE_EPL", RLE, EPL, sep = "_", remove = FALSE) %>%
+  mutate(RLE_EPL = factor(RLE_EPL, levels = c("LC_WP", "LC_MP", "VU_WP", "VU_MP", "LC_PP",  "LC_NP",  "VU_PP", "VU_NP", "EN_WP", "EN_MP",  "CR_WP", "CR_MP","EN_PP" , "EN_NP","CR_PP", "CR_NP"), ordered = TRUE))
+  
+  
+
+sum_results <- ter_results %>%
+  count(RLE_EPL, T_BIOME, name = "count_types") %>%
+  pivot_wider(names_from = T_BIOME, values_from = count_types, values_fill = 0) %>%
+  rowwise() %>%
+    mutate(Total = sum(c_across(2:11), na.rm = TRUE)) %>%
+   ungroup() %>%
+   bind_rows(
+    summarise(., 
+      across(where(is.numeric), ~ sum(., na.rm = TRUE)),
+      across(where(~ !is.numeric(.)), ~ "Total")
+    )
+  )
+  
+
+# write results
+write.csv(ter_results, file = "outputs/RLE_EPL_ter_results.csv") 
+write.csv(sum_results, file = "outputs/RLE_EPL_ter_results_summary.csv") 
+```
