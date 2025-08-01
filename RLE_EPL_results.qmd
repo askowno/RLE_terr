@@ -24,7 +24,7 @@ veg <- veg %>%
    select(T_MAPCODE,T_BIOME, T_Name)
 
 # combine
-ter_results <- veg %>%
+ter_results_type <- veg %>%
   left_join(RLE,by = "T_MAPCODE" ) %>%
   select(T_MAPCODE,T_BIOME, T_Name, RLE, Criteria_triggered) %>%
   left_join(EPL24, by = "T_MAPCODE") %>%
@@ -36,8 +36,8 @@ ter_results <- veg %>%
   mutate(RLE_EPL = factor(RLE_EPL, levels = c("LC_WP", "LC_MP", "VU_WP", "VU_MP", "LC_PP",  "LC_NP",  "VU_PP", "VU_NP", "EN_WP", "EN_MP",  "CR_WP", "CR_MP","EN_PP" , "EN_NP","CR_PP", "CR_NP"), ordered = TRUE))
   
   
-
-sum_results <- ter_results %>%
+# Results for unluckies
+ter_results_sum_unlucky <- ter_results_type %>%
   count(RLE_EPL, T_BIOME, name = "count_types") %>%
   pivot_wider(names_from = T_BIOME, values_from = count_types, values_fill = 0) %>%
   rowwise() %>%
@@ -49,9 +49,13 @@ sum_results <- ter_results %>%
       across(where(~ !is.numeric(.)), ~ "Total")
     )
   )
-  
+
 
 # write results
-write.csv(ter_results, file = "outputs/RLE_EPL_ter_results.csv") 
-write.csv(sum_results, file = "outputs/RLE_EPL_ter_results_summary.csv") 
+write.csv(ter_results_type, file = "outputs/ter_results_type_rle_epl.csv") 
+write.csv(ter_results_sum_unlucky, file = "outputs/ter_results_sum_unlucky.csv") 
+```
+
+```{r}
+
 ```
