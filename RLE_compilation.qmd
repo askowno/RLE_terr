@@ -264,9 +264,12 @@ RLE_full_compiled <- RLE_A2bA3_compiled %>%
              `3`= "EN" ,
              `4`= "CR" )
   )) %>%
-  mutate(RLE = factor(RLE, levels = rank_levels, ordered = TRUE))
+  mutate(RLE = factor(RLE, levels = rank_levels, ordered = TRUE)) %>%
+  # add in extent of type, rem 2022, pnat2022, plost50 9022
+  left_join(results_A2b_B_ROD %>% select(T_MAPCODE, X1750, X2022, pnat_2022, ROD9022, prclost50_9022),
+    by = "T_MAPCODE" )
   
-  write.csv(RLE_full_compiled, file = "outputs/RLE_full_compiled.csv") 
+write.csv(RLE_full_compiled, file = "outputs/RLE_full_compiled.csv") 
 
 ```
 
@@ -330,8 +333,7 @@ st_drop_geometry() %>%
 # make summary counts of RLE categories per biome
  rle_sum <- RLE_full_compiled_adjusted %>%
     left_join(veg, by = "T_MAPCODE") %>%
-     filter(T_MAPCODE != "Gd9") %>%   
-   group_by(RLE, T_BIOME) %>%
+     group_by(RLE, T_BIOME) %>%
   summarise(count = n(),.groups = 'drop') %>%
   pivot_wider(names_from = RLE, 
               values_from = count, values_fill = 0) %>%
@@ -355,8 +357,6 @@ st_drop_geometry() %>%
  
  rle_ext <- RLE_full_compiled_adjusted %>%
     left_join(veg, by = "T_MAPCODE") %>%
-    left_join(results_A2b_B_ROD[,c("T_MAPCODE", "X1750", "X2022")], by="T_MAPCODE") %>%
-   filter(T_MAPCODE != "Gd9") %>% 
     group_by(RLE, T_BIOME) %>%
   summarise(ext2022 = round(sum(X2022), 2),.groups = 'drop') %>%
   pivot_wider(names_from = RLE, 
@@ -399,16 +399,23 @@ rle_barplot_sum <- nba_plot(pd_rle_sum,
                  CHRT = "bar",
                  NUM = TRUE,
                  LAB = "Percentage of ecosystem types",
-                SAVE = NULL)
+                SAVE = NULL,
+                SCALE_TEXT = 0.6)
 
-rle_barplot_sum
+rle_barplot_sum <- rle_barplot_sum +
+  theme(
+    legend.position = "bottom",             # keep it at the bottom
+    legend.margin = margin(l = -45, r = -5, t = -5, b = -5)) 
+# to tweak position of legend uselegend.margin to prevent it being cut off: 
+# make l more negative to shift left etc 
+# but it is also affected by SCALE_TEXT above
 
 #export the 2024 plot of counts 
 ggsave(
   filename = "outputs/rle_barplot_sum.jpeg", # File name
   plot = rle_barplot_sum,                  # Plot object
   device = "jpeg",                        # File format
-  width = 16, height = 12, units = "cm",   # Dimensions
+  width = 9, height = 7, units = "cm",   # Dimensions
   dpi = 300                               # Resolution
 )
 
@@ -427,16 +434,23 @@ rle_barplot_ext <- nba_plot(pd_rle_ext,
                  CHRT = "bar",
                  NUM = FALSE,
                  LAB = "Percentage of natural ecosystem extent",
-                SAVE = NULL)
+                SAVE = NULL, 
+                SCALE_TEXT = 0.6)
 
-rle_barplot_ext
+rle_barplot_ext <- rle_barplot_ext +
+  theme(
+    legend.position = "bottom",             # keep it at the bottom
+    legend.margin = margin(l = -45, r = -5, t = -5, b = -5)) 
+# to tweak position of legend uselegend.margin to prevent it being cut off: 
+# make l more negative to shift left etc 
+# but it is also affected by SCALE_TEXT above
 
 #export the 2024 plot of counts 
 ggsave(
   filename = "outputs/rle_barplot_ext.jpeg", # File name
   plot = rle_barplot_ext,                  # Plot object
   device = "jpeg",                        # File format
-  width = 16, height = 12, units = "cm",   # Dimensions
+  width = 9, height = 7, units = "cm",   # Dimensions
   dpi = 300                               # Resolution
 )
 ```
