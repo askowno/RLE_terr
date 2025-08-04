@@ -6,10 +6,15 @@ format: html
 ```{r}
 library(tidyverse)
 library(sf)
+library(readxl)
 
 # load RLE and EPL results, then combine these and check the unluckies
 RLE <- read.csv("C:/Rdata/RLE_terr/outputs/RLE_full_compiled_adjusted.csv")
 EPL24 <- read.csv("C:/Rdata/EPL_terr/outputs/results_df_EPL_2024_invasives2.csv")
+
+# ADD GET CODES
+getlist <- read_excel("C:/Users/skownoa/OneDrive - sanbi.org.za/Documents/4EcosystemClassification&Assessment/Classification/GlobalEcosystemAtlas_GEO/GEO GEA database/EFG codes and pixel values  for IEM types.xlsx", sheet = "iem_efg_table")
+
 
 # remove mangrove and swamp forest from EPL to align with RLE
 EPL24 <- filter(EPL24, !T_MAPCODE %in% c("FOa2", "FOa3"))
@@ -25,17 +30,24 @@ veg <- veg %>%
 
 # combine
 ter_results_type <- veg %>%
+  left_join(getlist, by = c("T_MAPCODE" = "iem_code") ) %>%
   left_join(RLE,by = "T_MAPCODE" ) %>%
-  select(T_MAPCODE,T_BIOME, T_Name, RLE, Criteria_triggered) %>%
+  select(T_MAPCODE,T_BIOME, T_Name, efg_code, X2022, RLE, Criteria_triggered) %>%
   left_join(EPL24, by = "T_MAPCODE") %>%
-    select(T_MAPCODE,T_BIOME.x, T_Name, RLE, Criteria_triggered, epl_nat_inv24) %>%
-    rename(EPL = epl_nat_inv24, T_BIOME = T_BIOME.x) %>%
+    select(T_MAPCODE,T_BIOME.x, T_Name, efg_code, X2022, RLE, Criteria_triggered, epl_nat_inv24) %>%
+    rename(EPL = epl_nat_inv24, T_BIOME = T_BIOME.x, extent = X2022, get = efg_code) %>%
   mutate(RLE = factor(RLE, levels = c("LC", "VU", "EN", "CR"), ordered = TRUE)) %>%
   mutate(EPL = factor(EPL, levels = c("NP", "PP", "MP", "WP"), ordered = TRUE)) %>%
   unite("RLE_EPL", RLE, EPL, sep = "_", remove = FALSE) %>%
-  mutate(RLE_EPL = factor(RLE_EPL, levels = c("LC_WP", "LC_MP", "VU_WP", "VU_MP", "LC_PP",  "LC_NP",  "VU_PP", "VU_NP", "EN_WP", "EN_MP",  "CR_WP", "CR_MP","EN_PP" , "EN_NP","CR_PP", "CR_NP"), ordered = TRUE))
+  mutate(RLE_EPL = factor(RLE_EPL, levels = c("LC_WP", "LC_MP", "VU_WP", "VU_MP", "LC_PP",  "LC_NP",  "VU_PP", "VU_NP", "EN_WP", "EN_MP",  "CR_WP", "CR_MP","EN_PP" , "EN_NP","CR_PP", "CR_NP"), ordered = TRUE)) 
+ 
   
-  
+# MAKE simple output for coastal and overal integrated results and plots 
+ter_results_for_integration <- ter_results_type %>%
+  select(T_MAPCODE, T_BIOME, get, extent, RLE, EPL) %>%
+  mutate(realm = "ter") %>%
+  rename(type = T_MAPCODE, zone = T_BIOME )
+ 
 # Results for unluckies
 ter_results_sum_unlucky <- ter_results_type %>%
   count(RLE_EPL, T_BIOME, name = "count_types") %>%
@@ -53,6 +65,7 @@ ter_results_sum_unlucky <- ter_results_type %>%
 
 # write results
 write.csv(ter_results_type, file = "outputs/ter_results_type_rle_epl.csv") 
+write.csv(ter_results_for_integration, file = "outputs/ter_results_for_integration.csv")
 write.csv(ter_results_sum_unlucky, file = "outputs/ter_results_sum_unlucky.csv") 
 ```
 

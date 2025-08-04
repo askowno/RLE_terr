@@ -93,15 +93,19 @@ The results from the supplementary assessments listed above were ingested and co
 Once all the results were compiled into a single table ([RLE_compilation.qmd](RLE_compilation.qmd)) the highest risk category for each ecosystem was selected, and each contributing criterion was captured. Key metrics, required in the reporting of RLE were also captured (e.g. extent remaining, EOO, AOO, percentage invaded) ([outputs/RLE_full_compiled.csv](outputs/RLE_full_compiled.csv)). Final adjustments and supplementary assessments undertaken by experts (Vlok & Vlok, 2020 [SKv11]; Jurgens et al., 2025 [SKr7, SKr2, SKr13]) and manual corrections of ecosystems on the threshold of categories were added as a final step ([outputs/RLE_full_compiled_adjusted.csv](outputs/RLE_full_compiled_adjusted.csv)).
 
 | RLE 2024 - Ecosystem count per category | RLE 2024 - Ecosystem extent per category |
-|----|----|
+|------------------------------------|------------------------------------|
 | ![](outputs/rle_barplot_sum.jpeg) | ![](outputs/rle_barplot_ext.jpeg) |
 
 #### Combined RLE and EPL results
 
-The results of the RLE and EPL assessments can be viewed together at a type level : [RLE_EPL_ter_results.csv](outputs/RLE_EPL_ter_results.csv)
+The results of the RLE and EPL assessments can be viewed together at a type level : [ter_results_type_rle_epl.csv](outputs/ter_results_type_rle_epl.csv)
 
-These are further summarised into per Biome RLE_EPL classes : [RLE_EPL_ter_results_summary.csv](outputs/RLE_EPL_ter_results_summary.csv)
+These are simplified for integration purposes with other realms here: [outpus/ter_results_for_integration.csv](outpus/ter_results_for_integration.csv)
+
+These are summarised into per Biome RLE_EPL classes to identify ünluckyecosystems) here: [RLE_EPL_ter_results_summary.csv](outputs/RLE_EPL_ter_results_summary.csv)
 
 ***A quarter of terrestrial ecosystem types (115 / 463) are highly-threatened (CR/EN) AND under-protected (PP/NP)***
 
 ***Fynbos fares worst with 40% of types (50/126) in this situation***
+
+write.csv(ter_results_type, file = "outputs/ter_results_type_rle_epl.csv") write.csv(ter_results_for_integration, file = "outputs/ter_results_for_integration.csv") write.csv(ter_results_sum_unlucky, file = "outputs/ter_results_sum_unlucky.csv")
