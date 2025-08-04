@@ -44,7 +44,7 @@ ter_results_type <- veg %>%
   
 # MAKE simple output for coastal and overal integrated results and plots 
 ter_results_for_integration <- ter_results_type %>%
-  select(T_MAPCODE, T_BIOME, get, extent, RLE, EPL) %>%
+  select(T_MAPCODE, T_BIOME, get, extent, RLE, EPL, RLE_EPL) %>%
   mutate(realm = "ter") %>%
   rename(type = T_MAPCODE, zone = T_BIOME )
  
